@@ -50,10 +50,11 @@
     "performance",
     "async"
   ],
+  "author": "Ghassen Lassoued <https://github.com/tapava>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/computekit",
+    "url": "https://github.com/tapava/compute-kit",
     "directory": "packages/core"
   },
   "sideEffects": false

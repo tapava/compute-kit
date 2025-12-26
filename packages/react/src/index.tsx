@@ -74,11 +74,7 @@ export function ComputeKitProvider({
     };
   }, [kit, instance]);
 
-  return (
-    <ComputeKitContext.Provider value={kit}>
-      {children}
-    </ComputeKitContext.Provider>
-  );
+  return <ComputeKitContext.Provider value={kit}>{children}</ComputeKitContext.Provider>;
 }
 
 /**
@@ -373,8 +369,8 @@ export function usePoolStats(refreshInterval: number = 0): PoolStats {
   const [stats, setStats] = useState<PoolStats>(() => kit.getStats());
 
   useEffect(() => {
+    // For one-time fetch (refreshInterval <= 0), we rely on the initial state
     if (refreshInterval <= 0) {
-      setStats(kit.getStats());
       return;
     }
 
