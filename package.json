@@ -46,15 +46,15 @@
     "assemblyscript",
     "async"
   ],
-  "author": "",
+  "author": "Ghassen Lassoued <https://github.com/tapava>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/computekit"
+    "url": "https://github.com/tapava/compute-kit"
   },
-  "homepage": "https://github.com/your-username/computekit#readme",
+  "homepage": "https://github.com/tapava/compute-kit#readme",
   "bugs": {
-    "url": "https://github.com/your-username/computekit/issues"
+    "url": "https://github.com/tapava/compute-kit/issues"
   },
   "engines": {
     "node": ">=18.0.0"
