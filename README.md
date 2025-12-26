@@ -108,20 +108,41 @@ console.log(result); // 12586269025 — UI never froze!
 ### React Usage
 
 ```tsx
-import { ComputeKitProvider, useCompute } from '@computekit/react';
+import { ComputeKitProvider, useComputeKit, useCompute } from '@computekit/react';
+import { useEffect } from 'react';
 
-// Wrap your app
+// 1. Wrap your app with the provider
 function App() {
   return (
     <ComputeKitProvider>
-      <Calculator />
+      <AppContent />
     </ComputeKitProvider>
   );
 }
 
-// Use the hook
+// 2. Register functions at the app level
+function AppContent() {
+  const kit = useComputeKit();
+
+  useEffect(() => {
+    // Register your compute functions once
+    kit.register('fibonacci', (n: number) => {
+      if (n <= 1) return n;
+      let a = 0,
+        b = 1;
+      for (let i = 2; i <= n; i++) {
+        [a, b] = [b, a + b];
+      }
+      return b;
+    });
+  }, [kit]);
+
+  return <Calculator />;
+}
+
+// 3. Use the hook in any component
 function Calculator() {
-  const { data, loading, error, run } = useCompute('fibonacci');
+  const { data, loading, error, run } = useCompute<number, number>('fibonacci');
 
   return (
     <div>
