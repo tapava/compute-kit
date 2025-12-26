@@ -1,6 +1,6 @@
 {
   "name": "@computekit/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Core WASM + Worker toolkit for running heavy computations without blocking the UI",
   "type": "module",
   "main": "./dist/index.cjs",

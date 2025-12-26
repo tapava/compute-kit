@@ -1,6 +1,6 @@
 {
   "name": "@computekit/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React bindings for ComputeKit - WASM + Worker toolkit",
   "type": "module",
   "main": "./dist/index.cjs",
