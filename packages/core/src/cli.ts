@@ -192,8 +192,6 @@ export function watch(options: BuildOptions): void {
   build(options);
 
   // Watch for changes (simplified - in production use chokidar)
-  const { input: _input } = options;
-
   const checkInterval = setInterval(() => {
     // In a real implementation, use file watchers
   }, 1000);

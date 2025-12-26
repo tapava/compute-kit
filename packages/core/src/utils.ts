@@ -274,6 +274,7 @@ export class LRUCache<K, V> {
 /**
  * Serialize function to string for worker
  */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export function serializeFunction(fn: Function): string {
   return fn.toString();
 }
@@ -291,14 +292,14 @@ export interface Logger {
 export function createLogger(prefix: string, enabled: boolean = false): Logger {
   const noop = () => {};
   const log = (level: string) =>
-    enabled
-      ? (...args: unknown[]) => console.log(`[${prefix}:${level}]`, ...args)
-      : noop;
+    enabled ? (...args: unknown[]) => console.log(`[${prefix}:${level}]`, ...args) : noop;
 
   return {
     debug: log('debug'),
     info: log('info'),
-    warn: enabled ? (...args: unknown[]) => console.warn(`[${prefix}:warn]`, ...args) : noop,
+    warn: enabled
+      ? (...args: unknown[]) => console.warn(`[${prefix}:warn]`, ...args)
+      : noop,
     error: (...args: unknown[]) => console.error(`[${prefix}:error]`, ...args),
   };
 }

@@ -56,6 +56,7 @@ interface PoolWorker {
 
 /** Registry entry for compute functions */
 interface RegisteredFunction {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   fn: Function;
   serialized: string;
 }
