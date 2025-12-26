@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { loadWasm, type WasmExports } from '../wasmLoader';
 
 // Format time with appropriate units
 function formatTime(ms: number): string {
@@ -19,14 +20,6 @@ interface BenchmarkResult {
   height: number;
 }
 
-// Type for the WASM exports
-interface WasmExports {
-  blurImage: (width: number, height: number, passes: number) => void;
-  imageChecksum: (width: number, height: number) => bigint;
-  getBufferPtr: () => number;
-  memory: WebAssembly.Memory;
-}
-
 export function WasmBenchmark() {
   const [blurPasses, setBlurPasses] = useState(200);
   const [imageSize, setImageSize] = useState(256);
@@ -40,17 +33,15 @@ export function WasmBenchmark() {
 
   // Load WASM module
   useEffect(() => {
-    async function loadWasm() {
-      try {
-        const wasm = await import('../wasmLoader');
-        setWasmModule(wasm as unknown as WasmExports);
+    loadWasm()
+      .then((wasm) => {
+        setWasmModule(wasm);
         console.log('WASM loaded, exports:', Object.keys(wasm));
-      } catch (err) {
+      })
+      .catch((err) => {
         console.error('Failed to load WASM:', err);
         setWasmError(err instanceof Error ? err.message : 'Failed to load WASM');
-      }
-    }
-    loadWasm();
+      });
   }, []);
 
   // Draw images to canvas after result is set

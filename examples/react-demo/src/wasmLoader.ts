@@ -4,7 +4,7 @@ interface WasmImports {
   env?: Record<string, unknown>;
 }
 
-interface WasmExports {
+export interface WasmExports {
   memory: WebAssembly.Memory;
   __new?: (size: number, id: number) => number;
   __pin?: (ptr: number) => number;
@@ -15,35 +15,14 @@ interface WasmExports {
   blurImage: (width: number, height: number, passes: number) => void;
 }
 
+let cachedExports: WasmExports | null = null;
+let loadingPromise: Promise<WasmExports> | null = null;
+
 async function instantiate(
   module: WebAssembly.Module,
   imports: WasmImports = {}
 ): Promise<WasmExports> {
-  const adaptedImports = {
-    env: Object.assign(Object.create(globalThis), imports.env || {}, {
-      abort(message: number, fileName: number, lineNumber: number, columnNumber: number) {
-        // ~lib/builtins/abort(~lib/string/String | null?, ~lib/string/String | null?, u32?, u32?) => void
-        const msg = __liftString(message >>> 0);
-        const file = __liftString(fileName >>> 0);
-        const line = lineNumber >>> 0;
-        const col = columnNumber >>> 0;
-        throw Error(`${msg} in ${file}:${line}:${col}`);
-      },
-    }),
-  };
-
-  const instance = await WebAssembly.instantiate(module, adaptedImports);
-  const exports = instance.exports as unknown as WasmExports & Record<string, any>;
-  const memory = exports.memory || (imports.env as any)?.memory;
-
-  const adaptedExports: WasmExports = Object.setPrototypeOf(
-    {
-      getBufferPtr(): number {
-        return exports.getBufferPtr() >>> 0;
-      },
-    },
-    exports
-  );
+  const memory = new WebAssembly.Memory({ initial: 256 });
 
   function __liftString(pointer: number): string | null {
     if (!pointer) return null;
@@ -56,32 +35,61 @@ async function instantiate(
     return string + String.fromCharCode(...memoryU16.subarray(start, end));
   }
 
+  const adaptedImports = {
+    env: Object.assign(Object.create(globalThis), imports.env || {}, {
+      memory,
+      abort(message: number, fileName: number, lineNumber: number, columnNumber: number) {
+        const msg = __liftString(message >>> 0);
+        const file = __liftString(fileName >>> 0);
+        const line = lineNumber >>> 0;
+        const col = columnNumber >>> 0;
+        throw Error(`${msg} in ${file}:${line}:${col}`);
+      },
+    }),
+  };
+
+  const instance = await WebAssembly.instantiate(module, adaptedImports);
+  const exports = instance.exports as unknown as WasmExports & Record<string, any>;
+
+  const adaptedExports: WasmExports = Object.setPrototypeOf(
+    {
+      getBufferPtr(): number {
+        return exports.getBufferPtr() >>> 0;
+      },
+    },
+    exports
+  );
+
   return adaptedExports;
 }
 
-const wasmExports = await (async (url: URL): Promise<WasmExports> =>
-  instantiate(
-    await (async () => {
-      const isNodeOrBun =
-        typeof process != 'undefined' &&
-        process.versions != null &&
-        (process.versions.node != null || process.versions.bun != null);
-      if (isNodeOrBun) {
-        return globalThis.WebAssembly.compile(
-          await (await import('node:fs/promises')).readFile(url)
-        );
-      } else {
-        return await globalThis.WebAssembly.compileStreaming(globalThis.fetch(url));
-      }
-    })(),
-    {}
-  ))(new URL('/compute.wasm', import.meta.url));
+/**
+ * Load and initialize the WASM module.
+ * Returns cached instance if already loaded.
+ */
+export async function loadWasm(): Promise<WasmExports> {
+  if (cachedExports) {
+    return cachedExports;
+  }
 
-export const memory = wasmExports.memory;
-export const __new = wasmExports.__new;
-export const __pin = wasmExports.__pin;
-export const __unpin = wasmExports.__unpin;
-export const __collect = wasmExports.__collect;
-export const __rtti_base = wasmExports.__rtti_base;
-export const getBufferPtr = wasmExports.getBufferPtr;
-export const blurImage = wasmExports.blurImage;
+  if (loadingPromise) {
+    return loadingPromise;
+  }
+
+  loadingPromise = (async () => {
+    const wasmUrl = new URL('/compute.wasm', import.meta.url);
+    const module = await WebAssembly.compileStreaming(fetch(wasmUrl));
+    cachedExports = await instantiate(module, {});
+    return cachedExports;
+  })();
+
+  return loadingPromise;
+}
+
+// For convenience, also export a getter that throws if not loaded
+export function getWasm(): WasmExports {
+  if (!cachedExports) {
+    throw new Error('WASM not loaded. Call loadWasm() first.');
+  }
+  return cachedExports;
+}
