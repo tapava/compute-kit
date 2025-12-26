@@ -32,7 +32,7 @@ async function instantiate(
     }),
   };
 
-  const { instance } = await WebAssembly.instantiate(module, adaptedImports);
+  const instance = await WebAssembly.instantiate(module, adaptedImports);
   const exports = instance.exports as unknown as WasmExports & Record<string, any>;
   const memory = exports.memory || (imports.env as any)?.memory;
 
