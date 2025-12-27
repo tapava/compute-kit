@@ -163,38 +163,56 @@ code {
 }
 
 pre {
-  background-color: #1e293b !important;
+  background-color: #0d1117 !important;
   border: none !important;
   border-radius: 0.75rem !important;
   padding: 1.25rem !important;
   margin: 1.5rem 0 !important;
   box-shadow: var(--shadow-md);
+  overflow-x: auto;
 
   code {
     background-color: transparent !important;
-    color: #e2e8f0 !important;
+    color: #e6edf3 !important;
     padding: 0;
     font-size: 0.875rem;
+    line-height: 1.6;
   }
 }
 
-// Syntax highlighting (dark theme for code blocks)
+// Syntax highlighting - GitHub Dark theme (high contrast)
 .highlight {
-  background-color: #1e293b !important;
+  background-color: #0d1117 !important;
   border-radius: 0.75rem;
 
+  // Plain text
+  .p,
+  .w {
+    color: #e6edf3;
+  }
+
+  // Comments
   .c,
   .c1,
-  .cm {
-    color: #64748b;
-  } // Comments
+  .cm,
+  .cs,
+  .cp {
+    color: #8b949e;
+    font-style: italic;
+  }
+
+  // Keywords (import, from, const, function, async, await, return)
   .k,
   .kd,
   .kn,
   .kp,
-  .kr {
-    color: #c084fc;
-  } // Keywords
+  .kr,
+  .kc,
+  .kt {
+    color: #ff7b72;
+  }
+
+  // Strings
   .s,
   .s1,
   .s2,
@@ -207,37 +225,87 @@ pre {
   .sx,
   .sr,
   .ss {
-    color: #86efac;
-  } // Strings
+    color: #a5d6ff;
+  }
+
+  // Function names and method calls
+  .nf,
+  .fm {
+    color: #d2a8ff;
+  }
+
+  // Class names and types
+  .nc,
+  .nn,
+  .nx {
+    color: #ffa657;
+  }
+
+  // Variables and identifiers
   .n,
   .na,
   .nb,
-  .nc,
-  .nd,
-  .ne,
-  .nf,
   .ni,
   .nl,
-  .nn,
   .no,
-  .nt,
-  .nv {
-    color: #7dd3fc;
-  } // Names
+  .nv,
+  .ne,
+  .nd {
+    color: #e6edf3;
+  }
+
+  // HTML/JSX tags
+  .nt {
+    color: #7ee787;
+  }
+
+  // Numbers
   .m,
   .mf,
   .mh,
   .mi,
-  .mo {
-    color: #fbbf24;
-  } // Numbers
+  .mo,
+  .il {
+    color: #79c0ff;
+  }
+
+  // Operators
   .o,
   .ow {
-    color: #f472b6;
-  } // Operators
+    color: #ff7b72;
+  }
+
+  // Punctuation (braces, parentheses, etc)
   .p {
-    color: #e2e8f0;
-  } // Punctuation
+    color: #e6edf3;
+  }
+
+  // Property names
+  .py,
+  .na {
+    color: #79c0ff;
+  }
+
+  // Special - imports and exports
+  .kn {
+    color: #ff7b72;
+  }
+
+  // Decorators
+  .nd {
+    color: #d2a8ff;
+  }
+
+  // Built-in functions
+  .nb {
+    color: #ffa657;
+  }
+
+  // Error
+  .err {
+    color: #ffa198;
+    background-color: transparent;
+  }
 }
 
 // Tables
