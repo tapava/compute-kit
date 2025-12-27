@@ -11,6 +11,10 @@ export default defineConfig({
     //   'Cross-Origin-Embedder-Policy': 'require-corp',
     // },
   },
+  build: {
+    // Ensure static assets from public folder are copied
+    copyPublicDir: true,
+  },
   optimizeDeps: {
     exclude: ['@computekit/core', '@computekit/react'],
   },
