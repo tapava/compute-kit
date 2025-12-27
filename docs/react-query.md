@@ -13,12 +13,13 @@ permalink: /react-query
 Seamlessly integrate ComputeKit with TanStack React Query.
 {: .fs-6 .fw-300 }
 
-## Table of contents
-
-{: .no_toc .text-delta }
-
-1. TOC
-   {:toc}
+<!-- prettier-ignore -->
+<details open markdown="block">
+  <summary>Table of contents</summary>
+  {: .text-delta }
+- TOC
+{:toc}
+</details>
 
 ---
 

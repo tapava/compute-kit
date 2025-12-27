@@ -13,12 +13,13 @@ permalink: /react-hooks
 ComputeKit provides purpose-built React hooks for seamless integration.
 {: .fs-6 .fw-300 }
 
-## Table of contents
-
-{: .no_toc .text-delta }
-
-1. TOC
-   {:toc}
+<!-- prettier-ignore -->
+<details open markdown="block">
+  <summary>Table of contents</summary>
+  {: .text-delta }
+- TOC
+{:toc}
+</details>
 
 ---
 
