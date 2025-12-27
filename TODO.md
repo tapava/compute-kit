@@ -7,6 +7,11 @@
   - Throttle `onProgress` calls in the React hook
   - Consider both throttle (regular intervals) and debounce (wait for pause) strategies
 
+- [ ] **Typed registry** - Add TypeScript support to narrow function names to only registered functions for autocomplete and type safety.
+  - Make `useCompute('functionName')` autocomplete only registered function names
+  - Type safety on input/output based on registered function signatures
+  - Consider using TypeScript's string literal types or const assertions
+
 ## Improvements
 
 - [ ] Add more WASM examples (Rust, C++)

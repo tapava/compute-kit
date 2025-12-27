@@ -77,8 +77,20 @@ export async function loadWasm(): Promise<WasmExports> {
   }
 
   loadingPromise = (async () => {
-    const wasmUrl = new URL('/compute.wasm', import.meta.url);
-    const module = await WebAssembly.compileStreaming(fetch(wasmUrl));
+    // Use absolute path from origin - works in both dev and production
+    const wasmUrl = new URL('/compute.wasm', window.location.origin).href;
+    const response = await fetch(wasmUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch WASM: ${response.status} ${response.statusText}`);
+    }
+    const module = await WebAssembly.compileStreaming(
+      // Create a new Response with the correct MIME type if needed
+      response.headers.get('content-type')?.includes('application/wasm')
+        ? response
+        : new Response(await response.arrayBuffer(), {
+            headers: { 'Content-Type': 'application/wasm' },
+          })
+    );
     cachedExports = await instantiate(module, {});
     return cachedExports;
   })();
