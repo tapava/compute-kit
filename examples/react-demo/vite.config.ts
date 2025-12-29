@@ -18,4 +18,5 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@computekit/core', '@computekit/react'],
   },
+  assetsInclude: ['**/*.wasm'],
 });

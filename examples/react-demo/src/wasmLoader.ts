@@ -77,12 +77,37 @@ export async function loadWasm(): Promise<WasmExports> {
   }
 
   loadingPromise = (async () => {
-    // Use absolute path from origin - works in both dev and production
-    const wasmUrl = new URL('/compute.wasm', window.location.origin).href;
-    const response = await fetch(wasmUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch WASM: ${response.status} ${response.statusText}`);
+    // Use relative path that works in both local dev and StackBlitz
+    // Try multiple paths to handle different environments
+    const possiblePaths = [
+      new URL('/compute.wasm', import.meta.url).href,
+      new URL('../public/compute.wasm', import.meta.url).href,
+      '/compute.wasm',
+    ];
+
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+
+    for (const wasmUrl of possiblePaths) {
+      try {
+        const res = await fetch(wasmUrl);
+        // Check if we got a valid WASM response (not an HTML fallback)
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && !contentType.includes('text/html')) {
+          response = res;
+          break;
+        }
+      } catch (e) {
+        lastError = e as Error;
+      }
     }
+
+    if (!response) {
+      throw new Error(
+        `Failed to fetch WASM from any path. Last error: ${lastError?.message}`
+      );
+    }
+
     const module = await WebAssembly.compileStreaming(
       // Create a new Response with the correct MIME type if needed
       response.headers.get('content-type')?.includes('application/wasm')
