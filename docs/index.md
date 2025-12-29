@@ -22,6 +22,7 @@ Run heavy computations with React hooks. Use WASM for native-speed performance. 
 
 [Get Started](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/tapava/compute-kit){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Try on StackBlitz](https://stackblitz.com/edit/compute-kit?file=README.md){: .btn .btn-outline .fs-5 .mb-4 .mb-md-0 }
 
 ---
 

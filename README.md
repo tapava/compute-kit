@@ -12,6 +12,7 @@
 [![Bundle Size React](https://img.shields.io/bundlephobia/minzip/@computekit/react?label=react%20size)](https://bundlephobia.com/package/@computekit/react)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/edit/compute-kit?file=README.md)
 
 [📚 Documentation](https://tapava.github.io/compute-kit) • [Live Demo](https://computekit-demo.vercel.app/) • [Getting Started](#-getting-started) • [Examples](#-examples) • [API](#-api) • [React Hooks](#-react-hooks) • [WASM](#-webassembly-support)
 
