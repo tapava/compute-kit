@@ -77,45 +77,50 @@ export async function loadWasm(): Promise<WasmExports> {
   }
 
   loadingPromise = (async () => {
-    // Use relative path that works in both local dev and StackBlitz
-    // Try multiple paths to handle different environments
+    // Try multiple paths to handle different environments (local dev, StackBlitz, production)
     const possiblePaths = [
-      new URL('/compute.wasm', import.meta.url).href,
-      new URL('../public/compute.wasm', import.meta.url).href,
       '/compute.wasm',
+      './compute.wasm',
+      new URL('/compute.wasm', import.meta.url).href,
     ];
 
-    let response: Response | null = null;
-    let lastError: Error | null = null;
+    let arrayBuffer: ArrayBuffer | null = null;
+    let lastError: string = '';
 
     for (const wasmUrl of possiblePaths) {
       try {
         const res = await fetch(wasmUrl);
-        // Check if we got a valid WASM response (not an HTML fallback)
-        const contentType = res.headers.get('content-type') || '';
-        if (res.ok && !contentType.includes('text/html')) {
-          response = res;
+        if (!res.ok) {
+          lastError = `${wasmUrl}: ${res.status} ${res.statusText}`;
+          continue;
+        }
+
+        const buffer = await res.arrayBuffer();
+        // Check for WASM magic number (0x00 0x61 0x73 0x6D = "\0asm")
+        const magic = new Uint8Array(buffer.slice(0, 4));
+        if (
+          magic[0] === 0x00 &&
+          magic[1] === 0x61 &&
+          magic[2] === 0x73 &&
+          magic[3] === 0x6d
+        ) {
+          arrayBuffer = buffer;
           break;
+        } else {
+          lastError = `${wasmUrl}: Invalid WASM (got ${Array.from(magic)
+            .map((b) => b.toString(16))
+            .join(' ')})`;
         }
       } catch (e) {
-        lastError = e as Error;
+        lastError = `${wasmUrl}: ${(e as Error).message}`;
       }
     }
 
-    if (!response) {
-      throw new Error(
-        `Failed to fetch WASM from any path. Last error: ${lastError?.message}`
-      );
+    if (!arrayBuffer) {
+      throw new Error(`Failed to fetch WASM from any path. Last error: ${lastError}`);
     }
 
-    const module = await WebAssembly.compileStreaming(
-      // Create a new Response with the correct MIME type if needed
-      response.headers.get('content-type')?.includes('application/wasm')
-        ? response
-        : new Response(await response.arrayBuffer(), {
-            headers: { 'Content-Type': 'application/wasm' },
-          })
-    );
+    const module = await WebAssembly.compile(arrayBuffer);
     cachedExports = await instantiate(module, {});
     return cachedExports;
   })();
