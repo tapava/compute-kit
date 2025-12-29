@@ -1,8 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Import WASM as URL - Vite handles asset resolution across all environments
-import wasmUrl from './compute.wasm?url';
-
 interface WasmImports {
   env?: Record<string, unknown>;
 }
@@ -80,8 +77,8 @@ export async function loadWasm(): Promise<WasmExports> {
   }
 
   loadingPromise = (async () => {
-    // Use the Vite-resolved WASM URL (works in StackBlitz and local dev)
-    const res = await fetch(wasmUrl);
+    // Fetch from public folder - works in local dev, production, and StackBlitz
+    const res = await fetch('/compute.wasm');
     if (!res.ok) {
       throw new Error(`Failed to fetch WASM: ${res.status} ${res.statusText}`);
     }
