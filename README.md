@@ -28,7 +28,7 @@
 - 🚀 **Non-blocking** : Everything runs in Web Workers
 - 🔧 **Zero config** : No manual worker files or postMessage handlers
 - 📦 **Tiny** : Core library is ~5KB gzipped
-- 🎯 **TypeScript** : Full type safety for your compute functions and WASM bindings
+- 🎯 **TypeScript** : Full type safety with [typed registry](#-typed-registry) for autocomplete and compile-time checks
 - 📊 **Progress tracking** : Built-in progress reporting for long-running tasks
 
 ---
@@ -310,6 +310,53 @@ const { progress, run } = useCompute('longTask', {
   onProgress: (p) => console.log(`${p.percent}% complete`),
 });
 ```
+
+---
+
+## 🏷️ Typed Registry
+
+Get **autocomplete** and **type safety** for your compute functions by extending the `ComputeFunctionRegistry` interface:
+
+```typescript
+// Extend the registry (in a .d.ts file or at the top of your file)
+declare module '@computekit/core' {
+  interface ComputeFunctionRegistry {
+    fibonacci: { input: number; output: number };
+    sum: { input: number[]; output: number };
+  }
+}
+```
+
+Now you get full type inference:
+
+```typescript
+// ✅ Types are inferred - no need for generics!
+kit.register('fibonacci', (n) => {
+  // n is inferred as number
+  if (n <= 1) return n;
+  let a = 0,
+    b = 1;
+  for (let i = 2; i <= n; i++) {
+    [a, b] = [b, a + b];
+  }
+  return b;
+});
+
+const result = await kit.run('fibonacci', 50); // result is number
+
+// ❌ TypeScript error: Argument of type 'string' is not assignable
+await kit.run('fibonacci', 'not a number');
+```
+
+Works with React hooks too:
+
+```tsx
+// Types inferred from registry
+const { data, run } = useCompute('fibonacci');
+// data: number | null, run: (n: number) => void
+```
+
+See the [API Reference](https://tapava.github.io/compute-kit/api-reference#typed-registry) for more details.
 
 ---
 
