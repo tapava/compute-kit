@@ -131,8 +131,8 @@ export function useComputeQuery<TInput, TOutput>(
   return useQuery<TOutput, Error>({
     queryKey: ['compute', name, input] as const,
     queryFn: async () => {
-      const result = await kit.run<TInput, TOutput>(name, input, computeOptions);
-      return result;
+      const result = await kit.run(name, input as never, computeOptions);
+      return result as TOutput;
     },
     ...queryOptions,
   });
@@ -183,8 +183,8 @@ export function useComputeMutation<TInput, TOutput>(
 
   return useMutation<TOutput, Error, TInput>({
     mutationFn: async (input: TInput) => {
-      const result = await kit.run<TInput, TOutput>(name, input, computeOptions);
-      return result;
+      const result = await kit.run(name, input as never, computeOptions);
+      return result as TOutput;
     },
     ...mutationOptions,
   });
@@ -232,7 +232,10 @@ export function createComputeHooks(kit: ComputeKit) {
 
       return useQuery<TOutput, Error>({
         queryKey: ['compute', name, input] as const,
-        queryFn: async () => kit.run<TInput, TOutput>(name, input, computeOptions),
+        queryFn: async () => {
+          const result = await kit.run(name, input as never, computeOptions);
+          return result as TOutput;
+        },
         ...queryOptions,
       });
     },
@@ -249,8 +252,10 @@ export function createComputeHooks(kit: ComputeKit) {
       const { computeOptions, ...mutationOptions } = options ?? {};
 
       return useMutation<TOutput, Error, TInput>({
-        mutationFn: async (input: TInput) =>
-          kit.run<TInput, TOutput>(name, input, computeOptions),
+        mutationFn: async (input: TInput) => {
+          const result = await kit.run(name, input as never, computeOptions);
+          return result as TOutput;
+        },
         ...mutationOptions,
       });
     },

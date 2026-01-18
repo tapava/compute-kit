@@ -46,6 +46,122 @@ new ComputeKit(options?: ComputeKitOptions)
 
 ---
 
+## Typed Registry
+
+ComputeKit supports **type-safe function registration** using TypeScript's declaration merging. This provides:
+
+- **Autocomplete** for registered function names
+- **Type inference** for input and output types
+- **Compile-time errors** for incorrect usage
+
+### Setting Up the Typed Registry
+
+Extend the `ComputeFunctionRegistry` interface to define your function signatures:
+
+```typescript
+// In a .d.ts file or at the top of your main file
+declare module '@computekit/core' {
+  interface ComputeFunctionRegistry {
+    fibonacci: { input: number; output: number };
+    sum: { input: number[]; output: number };
+    processData: { input: { items: string[] }; output: { count: number } };
+  }
+}
+```
+
+### Using DefineFunction Helper
+
+For cleaner syntax, use the `DefineFunction` type helper:
+
+```typescript
+import type { DefineFunction } from '@computekit/core';
+
+declare module '@computekit/core' {
+  interface ComputeFunctionRegistry {
+    fibonacci: DefineFunction<number, number>;
+    sum: DefineFunction<number[], number>;
+    processData: DefineFunction<{ items: string[] }, { count: number }>;
+  }
+}
+```
+
+### Benefits
+
+Once you've extended the registry, you get full type safety:
+
+```typescript
+import { ComputeKit } from '@computekit/core';
+
+const kit = new ComputeKit();
+
+// ✅ Types are inferred - no need for generics!
+kit.register('fibonacci', (n) => {
+  // n is inferred as number
+  if (n <= 1) return n;
+  let a = 0,
+    b = 1;
+  for (let i = 2; i <= n; i++) {
+    [a, b] = [b, a + b];
+  }
+  return b; // return type must be number
+});
+
+// ✅ Input type is enforced
+const result = await kit.run('fibonacci', 50); // result is number
+
+// ❌ TypeScript error: 'unknownFunc' is not in the registry
+await kit.run('unknownFunc', 42);
+
+// ❌ TypeScript error: Argument of type 'string' is not assignable to 'number'
+await kit.run('fibonacci', 'not a number');
+```
+
+### With React Hooks
+
+The typed registry works seamlessly with React hooks:
+
+```tsx
+import { useCompute, useComputeCallback } from '@computekit/react';
+
+function FibonacciCalculator() {
+  // ✅ Types are inferred from the registry
+  const { data, loading, run } = useCompute('fibonacci');
+  // data is number | null
+  // run expects (input: number) => void
+
+  return (
+    <button onClick={() => run(50)}>
+      {loading ? 'Computing...' : `Result: ${data}`}
+    </button>
+  );
+}
+```
+
+### Registry Type Helpers
+
+| Type                      | Description                                                |
+| ------------------------- | ---------------------------------------------------------- |
+| `ComputeFunctionRegistry` | The base interface to extend with your functions           |
+| `RegisteredFunctionName`  | Union of all registered function names                     |
+| `FunctionInput<Name>`     | Get the input type for a function                          |
+| `FunctionOutput<Name>`    | Get the output type for a function                         |
+| `DefineFunction<I, O>`    | Helper to define `{ input: I; output: O }`                 |
+| `ComputeFn<I, O>`         | Type for compute functions `(input: I) => O \| Promise<O>` |
+| `InferComputeFn<Name>`    | Infer the full function type from a name                   |
+| `HasRegisteredFunctions`  | Boolean type indicating if registry has entries            |
+
+### Fallback Behavior
+
+If you don't extend the registry, ComputeKit falls back to the original behavior with explicit generics:
+
+```typescript
+// Still works without registry extension
+const { data, run } = useCompute<number, number>('fibonacci');
+const result = await kit.run<number, number>('fibonacci', 50);
+```
+
+---
+
 ## Methods
 
 ### initialize()
