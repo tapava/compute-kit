@@ -15,6 +15,10 @@ import {
   ComputeKit,
   type ComputeKitOptions,
   type ComputeOptions,
+  type ComputeFunctionRegistry,
+  type RegisteredFunctionName,
+  type FunctionInput,
+  type FunctionOutput,
 } from '@computekit/core';
 
 // ============================================================================
@@ -100,39 +104,48 @@ export interface UseComputeQueryOptions<TOutput> extends Omit<
  *
  * @example
  * ```tsx
- * // First, register the function
- * kit.register('fibonacci', (n: number) => {
- *   let a = 0, b = 1;
- *   for (let i = 2; i <= n; i++) [a, b] = [b, a + b];
- *   return b;
- * });
+ * // Basic usage with explicit types
+ * const { data, isLoading } = useComputeQuery<number, number>('fibonacci', 50);
  *
- * // Then use it in your component
- * function Fibonacci({ n }: { n: number }) {
- *   const { data, isLoading, error } = useComputeQuery('fibonacci', n);
- *
- *   if (isLoading) return <div>Computing...</div>;
- *   if (error) return <div>Error: {error.message}</div>;
- *   return <div>Result: {data}</div>;
- * }
+ * // With typed registry - types are inferred!
+ * // declare module '@computekit/core' {
+ * //   interface ComputeFunctionRegistry {
+ * //     fibonacci: { input: number; output: number };
+ * //   }
+ * // }
+ * // const { data } = useComputeQuery('fibonacci', 50); // data is number
  * ```
  */
-export function useComputeQuery<TInput, TOutput>(
+export function useComputeQuery<
+  TName extends RegisteredFunctionName,
+  TInput = FunctionInput<TName extends string ? TName : never>,
+  TOutput = FunctionOutput<TName extends string ? TName : never>,
+>(
   /** Name of the registered compute function */
-  name: string,
+  name: TName,
   /** Input to pass to the function */
-  input: TInput,
+  input: TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TInput,
   /** React Query and ComputeKit options */
-  options?: UseComputeQueryOptions<TOutput>
+  options?: UseComputeQueryOptions<
+    TName extends keyof ComputeFunctionRegistry
+      ? ComputeFunctionRegistry[TName]['output']
+      : TOutput
+  >
 ) {
+  type ActualOutput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput;
+
   const kit = useComputeKit();
   const { computeOptions, ...queryOptions } = options ?? {};
 
-  return useQuery<TOutput, Error>({
+  return useQuery<ActualOutput, Error>({
     queryKey: ['compute', name, input] as const,
     queryFn: async () => {
-      const result = await kit.run(name, input as never, computeOptions);
-      return result as TOutput;
+      const result = await kit.run(name, input, computeOptions);
+      return result as ActualOutput;
     },
     ...queryOptions,
   });
@@ -158,33 +171,45 @@ export interface UseComputeMutationOptions<TInput, TOutput> extends Omit<
  *
  * @example
  * ```tsx
- * function ImageProcessor() {
- *   const { mutate, data, isPending, error } = useComputeMutation<ImageData, ImageData>('blur');
+ * // Basic usage with explicit types
+ * const { mutate, isPending } = useComputeMutation<ImageData, ImageData>('blur');
  *
- *   return (
- *     <div>
- *       <button onClick={() => mutate(imageData)} disabled={isPending}>
- *         {isPending ? 'Processing...' : 'Apply Blur'}
- *       </button>
- *       {data && <img src={data.url} />}
- *     </div>
- *   );
- * }
+ * // With typed registry - types are inferred!
+ * // const { mutate } = useComputeMutation('blur');
+ * // mutate(imageData); // input type enforced
  * ```
  */
-export function useComputeMutation<TInput, TOutput>(
+export function useComputeMutation<
+  TName extends RegisteredFunctionName,
+  TInput = FunctionInput<TName extends string ? TName : never>,
+  TOutput = FunctionOutput<TName extends string ? TName : never>,
+>(
   /** Name of the registered compute function */
-  name: string,
+  name: TName,
   /** React Query and ComputeKit options */
-  options?: UseComputeMutationOptions<TInput, TOutput>
+  options?: UseComputeMutationOptions<
+    TName extends keyof ComputeFunctionRegistry
+      ? ComputeFunctionRegistry[TName]['input']
+      : TInput,
+    TName extends keyof ComputeFunctionRegistry
+      ? ComputeFunctionRegistry[TName]['output']
+      : TOutput
+  >
 ) {
+  type ActualInput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TInput;
+  type ActualOutput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput;
+
   const kit = useComputeKit();
   const { computeOptions, ...mutationOptions } = options ?? {};
 
-  return useMutation<TOutput, Error, TInput>({
-    mutationFn: async (input: TInput) => {
+  return useMutation<ActualOutput, Error, ActualInput>({
+    mutationFn: async (input: ActualInput) => {
       const result = await kit.run(name, input as never, computeOptions);
-      return result as TOutput;
+      return result as ActualOutput;
     },
     ...mutationOptions,
   });
@@ -210,10 +235,8 @@ export function useComputeMutation<TInput, TOutput>(
  *
  * const { useQuery, useMutation } = createComputeHooks(kit);
  *
- * function MyComponent() {
- *   const { data } = useQuery('fibonacci', 50);
- *   return <div>{data}</div>;
- * }
+ * // With typed registry - types are inferred!
+ * const { data } = useQuery('fibonacci', 50); // data is number
  * ```
  */
 export function createComputeHooks(kit: ComputeKit) {
@@ -221,20 +244,37 @@ export function createComputeHooks(kit: ComputeKit) {
     /**
      * Query hook bound to this ComputeKit instance
      */
-    useQuery: <TInput, TOutput>(
-      name: string,
-      input: TInput,
-      options?: Omit<UseComputeQueryOptions<TOutput>, 'computeOptions'> & {
+    useQuery: <
+      TName extends RegisteredFunctionName,
+      TInput = FunctionInput<TName extends string ? TName : never>,
+      TOutput = FunctionOutput<TName extends string ? TName : never>,
+    >(
+      name: TName,
+      input: TName extends keyof ComputeFunctionRegistry
+        ? ComputeFunctionRegistry[TName]['input']
+        : TInput,
+      options?: Omit<
+        UseComputeQueryOptions<
+          TName extends keyof ComputeFunctionRegistry
+            ? ComputeFunctionRegistry[TName]['output']
+            : TOutput
+        >,
+        'computeOptions'
+      > & {
         computeOptions?: ComputeOptions;
       }
     ) => {
+      type ActualOutput = TName extends keyof ComputeFunctionRegistry
+        ? ComputeFunctionRegistry[TName]['output']
+        : TOutput;
+
       const { computeOptions, ...queryOptions } = options ?? {};
 
-      return useQuery<TOutput, Error>({
+      return useQuery<ActualOutput, Error>({
         queryKey: ['compute', name, input] as const,
         queryFn: async () => {
-          const result = await kit.run(name, input as never, computeOptions);
-          return result as TOutput;
+          const result = await kit.run(name, input, computeOptions);
+          return result as ActualOutput;
         },
         ...queryOptions,
       });
@@ -243,18 +283,39 @@ export function createComputeHooks(kit: ComputeKit) {
     /**
      * Mutation hook bound to this ComputeKit instance
      */
-    useMutation: <TInput, TOutput>(
-      name: string,
-      options?: Omit<UseComputeMutationOptions<TInput, TOutput>, 'computeOptions'> & {
+    useMutation: <
+      TName extends RegisteredFunctionName,
+      TInput = FunctionInput<TName extends string ? TName : never>,
+      TOutput = FunctionOutput<TName extends string ? TName : never>,
+    >(
+      name: TName,
+      options?: Omit<
+        UseComputeMutationOptions<
+          TName extends keyof ComputeFunctionRegistry
+            ? ComputeFunctionRegistry[TName]['input']
+            : TInput,
+          TName extends keyof ComputeFunctionRegistry
+            ? ComputeFunctionRegistry[TName]['output']
+            : TOutput
+        >,
+        'computeOptions'
+      > & {
         computeOptions?: ComputeOptions;
       }
     ) => {
+      type ActualInput = TName extends keyof ComputeFunctionRegistry
+        ? ComputeFunctionRegistry[TName]['input']
+        : TInput;
+      type ActualOutput = TName extends keyof ComputeFunctionRegistry
+        ? ComputeFunctionRegistry[TName]['output']
+        : TOutput;
+
       const { computeOptions, ...mutationOptions } = options ?? {};
 
-      return useMutation<TOutput, Error, TInput>({
-        mutationFn: async (input: TInput) => {
+      return useMutation<ActualOutput, Error, ActualInput>({
+        mutationFn: async (input: ActualInput) => {
           const result = await kit.run(name, input as never, computeOptions);
-          return result as TOutput;
+          return result as ActualOutput;
         },
         ...mutationOptions,
       });
@@ -269,5 +330,13 @@ export function createComputeHooks(kit: ComputeKit) {
 // Exports
 // ============================================================================
 
-export type { ComputeKitOptions, ComputeOptions } from '@computekit/core';
+export type {
+  ComputeKitOptions,
+  ComputeOptions,
+  // Typed registry exports
+  ComputeFunctionRegistry,
+  RegisteredFunctionName,
+  FunctionInput,
+  FunctionOutput,
+} from '@computekit/core';
 export { ComputeKit } from '@computekit/core';
