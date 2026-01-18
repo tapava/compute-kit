@@ -168,12 +168,12 @@ export function ParallelBlurDemo() {
 
     const promises = sourceImages.map(async (img, index) => {
       const start = performance.now();
-      const result = await kit.run<BlurInput, number[]>('blurImage', {
+      const result = (await kit.run('blurImage', {
         imageData: Array.from(img),
         width: imageSize,
         height: imageSize,
         passes: blurPasses,
-      });
+      })) as number[];
       const time = performance.now() - start;
       return {
         id: index,
