@@ -15,3 +15,4 @@ export {
   vectorMagnitude,
   vectorNormalize,
 } from './matrix';
+export { getBufferPtr, blurImage } from './blur';

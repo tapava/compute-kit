@@ -1,0 +1,40 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="56" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+  
+  <!-- Outer ring representing workers -->
+  <circle cx="60" cy="60" r="48" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 4" opacity="0.6"/>
+  
+  <!-- CPU/Core symbol -->
+  <rect x="35" y="35" width="50" height="50" rx="8" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+  
+  <!-- Grid inside (representing compute units) -->
+  <line x1="52" y1="40" x2="52" y2="80" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="68" y1="40" x2="68" y2="80" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="40" y1="52" x2="80" y2="52" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="40" y1="68" x2="80" y2="68" stroke="#e2e8f0" stroke-width="1"/>
+  
+  <!-- Active compute cells -->
+  <rect x="40" y="40" width="12" height="12" fill="#06b6d4" opacity="0.9"/>
+  <rect x="54" y="54" width="12" height="12" fill="#7c3aed" opacity="0.9"/>
+  <rect x="68" y="40" width="12" height="12" fill="#7c3aed" opacity="0.9"/>
+  <rect x="40" y="68" width="12" height="12" fill="#7c3aed" opacity="0.9"/>
+  <rect x="68" y="68" width="12" height="12" fill="#06b6d4" opacity="0.9"/>
+  
+  <!-- Connection pins -->
+  <rect x="42" y="28" width="8" height="6" fill="#94a3b8"/>
+  <rect x="56" y="28" width="8" height="6" fill="#94a3b8"/>
+  <rect x="70" y="28" width="8" height="6" fill="#94a3b8"/>
+  
+  <rect x="42" y="86" width="8" height="6" fill="#94a3b8"/>
+  <rect x="56" y="86" width="8" height="6" fill="#94a3b8"/>
+  <rect x="70" y="86" width="8" height="6" fill="#94a3b8"/>
+  
+  <rect x="28" y="42" width="6" height="8" fill="#94a3b8"/>
+  <rect x="28" y="56" width="6" height="8" fill="#94a3b8"/>
+  <rect x="28" y="70" width="6" height="8" fill="#94a3b8"/>
+  
+  <rect x="86" y="42" width="6" height="8" fill="#94a3b8"/>
+  <rect x="86" y="56" width="6" height="8" fill="#94a3b8"/>
+  <rect x="86" y="70" width="6" height="8" fill="#94a3b8"/>
+</svg>

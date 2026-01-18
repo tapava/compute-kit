@@ -205,6 +205,20 @@ export type {
   WorkerInfo,
   WasmModuleConfig,
   ComputeKitEvents,
+  // Pipeline types
+  StageStatus,
+  StageInfo,
+  StageConfig,
+  PipelineMode,
+  PipelineStatus,
+  PipelineState,
+  PipelineMetrics,
+  PipelineOptions,
+  PipelineEvents,
+  // Parallel batch types
+  ParallelBatchConfig,
+  BatchItemResult,
+  ParallelBatchResult,
 } from './types';
 
 // Re-export utilities

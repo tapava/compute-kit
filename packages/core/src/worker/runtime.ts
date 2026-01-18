@@ -11,7 +11,7 @@ import type {
   ComputeProgress,
 } from '../types';
 
-import { generateId, findTransferables } from '../utils';
+import { generateId, findTransferables, estimatePayloadSize } from '../utils';
 
 /** Registry of compute functions available in the worker */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -91,12 +91,16 @@ async function handleMessage(event: MessageEvent<WorkerMessage>): Promise<void> 
       // Find transferable objects in result
       const transfer = findTransferables(result);
 
+      // Estimate output size for debugging
+      const outputSize = estimatePayloadSize(result);
+
       const response: WorkerMessage<ResultPayload> = {
         id,
         type: 'result',
         payload: {
           data: result,
           duration,
+          outputSize,
         },
         timestamp: Date.now(),
       };
@@ -104,6 +108,7 @@ async function handleMessage(event: MessageEvent<WorkerMessage>): Promise<void> 
       self.postMessage(response, transfer as Transferable[]);
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
+      const duration = performance.now() - startTime;
 
       const response: WorkerMessage<ErrorPayload> = {
         id,
@@ -111,6 +116,8 @@ async function handleMessage(event: MessageEvent<WorkerMessage>): Promise<void> 
         payload: {
           message: error.message,
           stack: error.stack,
+          functionName,
+          duration,
         },
         timestamp: Date.now(),
       };

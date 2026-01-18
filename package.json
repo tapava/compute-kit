@@ -9,14 +9,14 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "npm run build:wasm && npm run build:core && npm run build:react && npm run build:examples",
+    "build": "npm run build:wasm && npm run build:core && npm run build:react && npm run build:react-query && npm run build:examples",
     "build:wasm": "asc compute/index.ts --outFile examples/react-demo/public/compute.wasm --bindings esm --optimize",
     "build:core": "npm run build -w @computekit/core",
     "build:react": "npm run build -w @computekit/react",
-    "build:examples": "npm run build -w examples/react-demo && npm run build -w examples/vanilla-demo",
-    "build:packages": "npm run build:core && npm run build:react",
+    "build:react-query": "npm run build -w @computekit/react-query",
+    "build:examples": "npm run build -w examples/react-demo",
+    "build:packages": "npm run build:core && npm run build:react && npm run build:react-query",
     "dev": "npm run dev -w examples/react-demo",
-    "dev:vanilla": "npm run dev -w examples/vanilla-demo",
     "test": "vitest",
     "lint": "eslint packages --ext .ts,.tsx",
     "clean": "rimraf packages/*/dist examples/*/dist",

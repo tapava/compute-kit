@@ -3,16 +3,18 @@
   
   # ComputeKit
   
-  **The React-first toolkit for WASM and Web Workers**
+  **A tiny toolkit for heavy computations using Web Workers**
   
-  *Run heavy computations with React hooks. Use WASM for native-speed performance. Keep your UI at 60fps.*
+  *Integration with React hooks and WASM*
 
 [![npm version](https://img.shields.io/npm/v/@computekit/core.svg)](https://www.npmjs.com/package/@computekit/core)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@computekit/core)](https://bundlephobia.com/package/@computekit/core)
+[![Bundle Size Core](https://img.shields.io/bundlephobia/minzip/@computekit/core?label=core%20size)](https://bundlephobia.com/package/@computekit/core)
+[![Bundle Size React](https://img.shields.io/bundlephobia/minzip/@computekit/react?label=react%20size)](https://bundlephobia.com/package/@computekit/react)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/edit/compute-kit?file=README.md)
 
-[Getting Started](#-getting-started) • [Examples](#-examples) • [API](#-api) • [React Hooks](#-react-hooks) • [WASM](#-webassembly-support)
+[📚 Documentation](https://tapava.github.io/compute-kit) • [Live Demo](https://computekit-demo.vercel.app/) • [Getting Started](#-getting-started) • [Examples](#-examples) • [API](#-api) • [React Hooks](#-react-hooks) • [WASM](#-webassembly-support)
 
 </div>
 
@@ -20,14 +22,14 @@
 
 ## ✨ Features
 
-- ⚛️ **React-first** — Purpose-built hooks like `useCompute` with loading, error, and progress states
-- 🦀 **WASM integration** — Load and call AssemblyScript/Rust WASM modules with zero boilerplate
-- 🚀 **Non-blocking** — Everything runs in Web Workers, keeping your UI at 60fps
-- 🔧 **Zero config** — No manual worker files, postMessage handlers, or WASM glue code
-- 📦 **Tiny** — Core library is ~3KB gzipped
-- 🎯 **TypeScript** — Full type safety for your compute functions and WASM bindings
-- 🔄 **Worker pool** — Automatic load balancing across CPU cores
-- 📊 **Progress tracking** — Built-in progress reporting for long-running tasks
+- 🔄 **Worker pool** : Automatic load balancing across CPU cores
+- ⚛️ **React-first** : Provides hooks like `useCompute` with loading, error, and progress states
+- 🦀 **WASM integration** : Easily load and call AssemblyScript/Rust WASM modules
+- 🚀 **Non-blocking** : Everything runs in Web Workers
+- 🔧 **Zero config** : No manual worker files or postMessage handlers
+- 📦 **Tiny** : Core library is ~5KB gzipped
+- 🎯 **TypeScript** : Full type safety for your compute functions and WASM bindings
+- 📊 **Progress tracking** : Built-in progress reporting for long-running tasks
 
 ---
 
@@ -48,7 +50,7 @@ You _can_ use Web Workers and WASM without a library. But here's the reality:
 
 ---
 
-## 🎯 When to use ComputeKit
+## 🎯 When to use this toolkit (And when not to use it)
 
 | ✅ Use ComputeKit                  | ❌ Don't use ComputeKit      |
 | ---------------------------------- | ---------------------------- |
@@ -102,7 +104,7 @@ kit.register('fibonacci', (n: number) => {
 
 // 3. Run it (non-blocking!)
 const result = await kit.run('fibonacci', 50);
-console.log(result); // 12586269025 — UI never froze!
+console.log(result); // 12586269025 :  UI never froze!
 ```
 
 ### React Usage
@@ -158,7 +160,7 @@ function Calculator() {
 
 ### React + WASM (Full Example)
 
-This is where ComputeKit shines — combining `useCompute` with WASM for native-speed performance:
+This is where ComputeKit shines : combining `useCompute` with WASM for native-speed performance:
 
 ```tsx
 import { ComputeKitProvider, useComputeKit, useCompute } from '@computekit/react';
@@ -252,7 +254,7 @@ function ImageProcessor() {
 
 **Key benefits:**
 
-- WASM runs in a Web Worker via `useCompute` — UI stays responsive
+- WASM runs in a Web Worker via `useCompute` : UI stays responsive
 - Same familiar `loading`, `data`, `error` pattern as other compute functions
 - WASM memory management encapsulated in the registered function
 - Can easily add progress reporting, cancellation, etc.
@@ -323,11 +325,29 @@ const kit = new ComputeKit(options?: ComputeKitOptions);
 
 #### Options
 
-| Option       | Type      | Default                         | Description             |
-| ------------ | --------- | ------------------------------- | ----------------------- |
-| `maxWorkers` | `number`  | `navigator.hardwareConcurrency` | Max workers in the pool |
-| `timeout`    | `number`  | `30000`                         | Default timeout in ms   |
-| `debug`      | `boolean` | `false`                         | Enable debug logging    |
+| Option               | Type       | Default                         | Description                         |
+| -------------------- | ---------- | ------------------------------- | ----------------------------------- |
+| `maxWorkers`         | `number`   | `navigator.hardwareConcurrency` | Max workers in the pool             |
+| `timeout`            | `number`   | `30000`                         | Default timeout in ms               |
+| `debug`              | `boolean`  | `false`                         | Enable debug logging                |
+| `remoteDependencies` | `string[]` | `[]`                            | External scripts to load in workers |
+
+### Remote Dependencies
+
+Load external libraries inside your workers:
+
+```typescript
+const kit = new ComputeKit({
+  remoteDependencies: [
+    'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
+  ],
+});
+
+kit.register('processData', (data: number[]) => {
+  // @ts-ignore - lodash loaded via importScripts
+  return _.chunk(data, 3);
+});
+```
 
 #### Methods
 
@@ -363,11 +383,14 @@ const {
   loading,   // Boolean loading state
   error,     // Error if failed
   progress,  // Progress info
+  status,    // 'idle' | 'running' | 'success' | 'error' | 'cancelled'
   run,       // Function to execute
   reset,     // Reset state
   cancel,    // Cancel current operation
 } = useCompute<TInput, TOutput>(functionName, options?);
 ```
+
+````
 
 ### `useComputeCallback`
 
@@ -376,7 +399,7 @@ Returns a memoized async function (similar to `useCallback`).
 ```typescript
 const calculate = useComputeCallback('sum');
 const result = await calculate([1, 2, 3, 4, 5]);
-```
+````
 
 ### `usePoolStats`
 
@@ -433,13 +456,13 @@ const wasmModule = await loadWasmModule('/compute/sum.wasm');
 
 ## ⚡ Performance Tips
 
-1. **Transfer large data** — Use typed arrays (Uint8Array, Float64Array) for automatic transfer optimization
+1. **Transfer large data** : Use typed arrays (Uint8Array, Float64Array) for automatic transfer optimization
 
-2. **Batch small operations** — Combine many small tasks into one larger task
+2. **Batch small operations** : Combine many small tasks into one larger task
 
-3. **Right-size your pool** — More workers ≠ better. Match to CPU cores.
+3. **Right-size your pool** : More workers ≠ better. Match to CPU cores.
 
-4. **Use WASM for math** — AssemblyScript functions can be 10-100x faster for numeric work
+4. **Use WASM for math** : AssemblyScript functions can be 10-100x faster for numeric work
 
 ```typescript
 // ❌ Slow: Many small calls
@@ -500,13 +523,14 @@ computekit/
 │       └── package.json
 │
 ├── compute/            # AssemblyScript functions
+│   ├── blur.ts
 │   ├── fibonacci.ts
 │   ├── mandelbrot.ts
-│   └── matrix.ts
+│   ├── matrix.ts
+│   └── sum.ts
 │
 ├── examples/
-│   ├── react-demo/     # React example app
-│   └── vanilla-demo/   # Vanilla JS example
+│   └── react-demo/     # React example app
 │
 └── docs/               # Documentation
 ```
@@ -519,8 +543,8 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/computekit.git
-cd computekit
+git clone https://github.com/tapava/compute-kit.git
+cd compute-kit
 
 # Install dependencies
 npm install
@@ -539,7 +563,7 @@ npm test
 
 ## 📄 License
 
-MIT © [Your Name](https://github.com/your-username)
+MIT © [Ghassen Lassoued](https://github.com/tapava)
 
 ---
 
@@ -548,6 +572,7 @@ MIT © [Your Name](https://github.com/your-username)
     <sub>Built with ❤️ for the web platform</sub>
   </p>
   <p>
-    <a href="https://github.com/your-username/computekit">⭐ Star on GitHub</a>
+    <a href="https://tapava.github.io/compute-kit">📚 Read the Docs</a> •
+    <a href="https://github.com/tapava/compute-kit">⭐ Star on GitHub</a>
   </p>
 </div>

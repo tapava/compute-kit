@@ -1,7 +1,7 @@
 {
-  "name": "@computekit/react",
-  "version": "0.1.3",
-  "description": "React bindings for ComputeKit - WASM + Worker toolkit",
+  "name": "@computekit/react-query",
+  "version": "0.1.1",
+  "description": "TanStack Query integration for ComputeKit - lightweight async compute with caching",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -29,14 +29,10 @@
   },
   "peerDependencies": {
     "react": ">=17.0.0",
-    "@types/react": ">=17.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@types/react": {
-      "optional": true
-    }
+    "@tanstack/react-query": ">=4.0.0"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.17.0",
     "@types/react": "^18.2.45",
     "react": "^18.2.0",
     "tsup": "^8.0.1",
@@ -45,19 +41,23 @@
   },
   "keywords": [
     "react",
+    "react-query",
+    "tanstack-query",
     "wasm",
     "webassembly",
     "workers",
-    "hooks",
     "compute",
-    "performance"
+    "async"
   ],
   "author": "Ghassen Lassoued <https://github.com/tapava>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tapava/compute-kit",
-    "directory": "packages/react"
+    "url": "https://github.com/tapava/compute-kit.git",
+    "directory": "packages/react-query"
   },
-  "sideEffects": false
+  "homepage": "https://github.com/tapava/compute-kit#readme",
+  "bugs": {
+    "url": "https://github.com/tapava/compute-kit/issues"
+  }
 }

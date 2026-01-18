@@ -280,6 +280,80 @@ export function serializeFunction(fn: Function): string {
 }
 
 /**
+ * Estimate the byte size of a value for structured cloning.
+ * This is an approximation useful for debugging and performance monitoring.
+ */
+export function estimatePayloadSize(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'boolean') return 4;
+  if (typeof value === 'number') return 8;
+  if (typeof value === 'string') return value.length * 2; // UTF-16
+
+  if (value instanceof ArrayBuffer) return value.byteLength;
+  if (ArrayBuffer.isView(value)) return value.byteLength;
+  if (value instanceof Blob) return value.size;
+
+  const seen = new WeakSet<object>();
+
+  function traverse(obj: unknown): number {
+    if (obj === null || typeof obj !== 'object') {
+      if (typeof obj === 'boolean') return 4;
+      if (typeof obj === 'number') return 8;
+      if (typeof obj === 'string') return (obj as string).length * 2;
+      return 0;
+    }
+
+    if (seen.has(obj)) return 0; // Avoid infinite loops
+    seen.add(obj);
+
+    if (obj instanceof ArrayBuffer) return obj.byteLength;
+    if (ArrayBuffer.isView(obj)) return obj.byteLength;
+    if (obj instanceof Blob) return obj.size;
+    if (obj instanceof Date) return 8;
+    if (obj instanceof RegExp) return obj.source.length * 2;
+
+    if (Array.isArray(obj)) {
+      return obj.reduce((sum, item) => sum + traverse(item), 0);
+    }
+
+    if (obj instanceof Map) {
+      let size = 0;
+      obj.forEach((val, key) => {
+        size += traverse(key) + traverse(val);
+      });
+      return size;
+    }
+
+    if (obj instanceof Set) {
+      let size = 0;
+      obj.forEach((val) => {
+        size += traverse(val);
+      });
+      return size;
+    }
+
+    // Plain object
+    return Object.entries(obj).reduce(
+      (sum, [key, val]) => sum + key.length * 2 + traverse(val),
+      0
+    );
+  }
+
+  return traverse(value);
+}
+
+/**
+ * Format bytes to human-readable string
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(i > 0 ? 1 : 0)} ${sizes[i]}`;
+}
+
+/**
  * Logger utility
  */
 export interface Logger {

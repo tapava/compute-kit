@@ -1,3 +1,11 @@
+---
+layout: default
+title: Core API (Detailed)
+nav_order: 8
+description: 'Detailed API reference for @computekit/core'
+permalink: /core-api
+---
+
 # @computekit/core API Reference
 
 Complete API documentation for the ComputeKit core library.
@@ -24,13 +32,13 @@ new ComputeKit(options?: ComputeKitOptions)
 
 #### ComputeKitOptions
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `maxWorkers` | `number` | `navigator.hardwareConcurrency \|\| 4` | Maximum number of workers in the pool |
-| `timeout` | `number` | `30000` | Default timeout for operations (ms) |
-| `debug` | `boolean` | `false` | Enable debug logging |
-| `workerPath` | `string` | `''` | Custom path to worker script |
-| `useSharedMemory` | `boolean` | `true` | Use SharedArrayBuffer when available |
+| Property          | Type      | Default                                | Description                           |
+| ----------------- | --------- | -------------------------------------- | ------------------------------------- |
+| `maxWorkers`      | `number`  | `navigator.hardwareConcurrency \|\| 4` | Maximum number of workers in the pool |
+| `timeout`         | `number`  | `30000`                                | Default timeout for operations (ms)   |
+| `debug`           | `boolean` | `false`                                | Enable debug logging                  |
+| `workerPath`      | `string`  | `''`                                   | Custom path to worker script          |
+| `useSharedMemory` | `boolean` | `true`                                 | Use SharedArrayBuffer when available  |
 
 ### Methods
 
@@ -56,6 +64,7 @@ kit.register('asyncTask', async (data) => {
 ```
 
 **Parameters:**
+
 - `name` - Unique identifier for the function
 - `fn` - The function to execute (runs in a Web Worker)
 
@@ -71,6 +80,7 @@ console.log(result); // 42
 ```
 
 **Parameters:**
+
 - `name` - Name of the registered function
 - `input` - Input data (will be serialized)
 - `options` - Optional execution options
@@ -115,13 +125,13 @@ await kit.terminate();
 
 Options for individual compute operations.
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `timeout` | `number` | Operation timeout in ms |
-| `transfer` | `ArrayBuffer[]` | ArrayBuffers to transfer (not copy) |
-| `priority` | `number` | Priority level (0-10, higher = first) |
-| `signal` | `AbortSignal` | Abort signal for cancellation |
-| `onProgress` | `(progress: ComputeProgress) => void` | Progress callback |
+| Property     | Type                                  | Description                           |
+| ------------ | ------------------------------------- | ------------------------------------- |
+| `timeout`    | `number`                              | Operation timeout in ms               |
+| `transfer`   | `ArrayBuffer[]`                       | ArrayBuffers to transfer (not copy)   |
+| `priority`   | `number`                              | Priority level (0-10, higher = first) |
+| `signal`     | `AbortSignal`                         | Abort signal for cancellation         |
+| `onProgress` | `(progress: ComputeProgress) => void` | Progress callback                     |
 
 ```typescript
 const controller = new AbortController();
@@ -140,12 +150,12 @@ await kit.run('task', data, {
 
 Progress information for long-running tasks.
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `percent` | `number` | Progress percentage (0-100) |
-| `phase` | `string?` | Current phase name |
-| `estimatedTimeRemaining` | `number?` | Estimated ms remaining |
-| `data` | `unknown?` | Additional data |
+| Property                 | Type       | Description                 |
+| ------------------------ | ---------- | --------------------------- |
+| `percent`                | `number`   | Progress percentage (0-100) |
+| `phase`                  | `string?`  | Current phase name          |
+| `estimatedTimeRemaining` | `number?`  | Estimated ms remaining      |
+| `data`                   | `unknown?` | Additional data             |
 
 ---
 
@@ -153,12 +163,12 @@ Progress information for long-running tasks.
 
 Result wrapper with execution metadata.
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `data` | `T` | The computed result |
-| `duration` | `number` | Execution time in ms |
-| `cached` | `boolean` | Whether result was cached |
-| `workerId` | `string` | ID of the worker that processed this |
+| Property   | Type      | Description                          |
+| ---------- | --------- | ------------------------------------ |
+| `data`     | `T`       | The computed result                  |
+| `duration` | `number`  | Execution time in ms                 |
+| `cached`   | `boolean` | Whether result was cached            |
+| `workerId` | `string`  | ID of the worker that processed this |
 
 ---
 
@@ -166,16 +176,16 @@ Result wrapper with execution metadata.
 
 Worker pool statistics.
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `workers` | `WorkerInfo[]` | Info about each worker |
-| `totalWorkers` | `number` | Total worker count |
-| `activeWorkers` | `number` | Currently busy workers |
-| `idleWorkers` | `number` | Currently idle workers |
-| `queueLength` | `number` | Tasks waiting in queue |
-| `tasksCompleted` | `number` | Total completed tasks |
-| `tasksFailed` | `number` | Total failed tasks |
-| `averageTaskDuration` | `number` | Average task duration (ms) |
+| Property              | Type           | Description                |
+| --------------------- | -------------- | -------------------------- |
+| `workers`             | `WorkerInfo[]` | Info about each worker     |
+| `totalWorkers`        | `number`       | Total worker count         |
+| `activeWorkers`       | `number`       | Currently busy workers     |
+| `idleWorkers`         | `number`       | Currently idle workers     |
+| `queueLength`         | `number`       | Tasks waiting in queue     |
+| `tasksCompleted`      | `number`       | Total completed tasks      |
+| `tasksFailed`         | `number`       | Total failed tasks         |
+| `averageTaskDuration` | `number`       | Average task duration (ms) |
 
 ---
 
@@ -192,7 +202,7 @@ Load a WASM module from various sources.
 const module = await loadWasmModule('/path/to/module.wasm');
 
 // From ArrayBuffer
-const bytes = await fetch('/module.wasm').then(r => r.arrayBuffer());
+const bytes = await fetch('/module.wasm').then((r) => r.arrayBuffer());
 const module = await loadWasmModule(bytes);
 
 // From base64
@@ -207,7 +217,7 @@ Load and instantiate a WASM module.
 const { module, instance } = await loadAndInstantiate({
   source: '/module.wasm',
   imports: {
-    env: { log: console.log }
+    env: { log: console.log },
   },
   memory: {
     initial: 256,

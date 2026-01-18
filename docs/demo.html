@@ -1,459 +1,594 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ComputeKit | WASM + Worker Toolkit</title>
     <style>
-        :root {
-            --bg-body: #0f1117;
-            --bg-panel: #161b22;
-            --bg-input: #0d1117;
-            --border: #30363d;
-            --primary: #58a6ff;
-            --primary-hover: #1f6feb;
-            --accent: #2ea043;
-            --danger: #da3633;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --font-code: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      :root {
+        --bg-body: #0f1117;
+        --bg-panel: #161b22;
+        --bg-input: #0d1117;
+        --border: #30363d;
+        --primary: #58a6ff;
+        --primary-hover: #1f6feb;
+        --accent: #2ea043;
+        --danger: #da3633;
+        --text-main: #c9d1d9;
+        --text-muted: #8b949e;
+        --font-code: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        --font-ui:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--font-ui);
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Header */
+      header {
+        height: 60px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        background: var(--bg-panel);
+      }
+
+      .brand {
+        font-weight: 700;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand span {
+        color: var(--primary);
+      }
+
+      .nav-links button {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 0.9rem;
+        margin-left: 20px;
+        transition: color 0.2s;
+      }
+
+      .nav-links button:hover {
+        color: var(--text-main);
+      }
+
+      /* Main Layout */
+      main {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* Sidebar / Code Editor */
+      .sidebar {
+        border-right: 1px solid var(--border);
+        background: var(--bg-panel);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      h2 {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        margin-bottom: 15px;
+        margin-top: 0;
+      }
+
+      .code-block {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 15px;
+        font-family: var(--font-code);
+        font-size: 0.85rem;
+        color: #a5d6ff;
+        line-height: 1.5;
+        overflow-x: auto;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .code-block::before {
+        content: 'compute/mandelbrot.ts';
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: var(--border);
+        color: var(--text-muted);
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-bottom-left-radius: 6px;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      input[type='range'] {
+        width: 100%;
+        cursor: pointer;
+      }
+
+      .btn-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      button.action-btn {
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--bg-input);
+        color: var(--text-main);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      button.action-btn:hover {
+        border-color: var(--text-muted);
+      }
+
+      button.primary {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+      button.primary:hover {
+        background: var(--primary-hover);
+      }
+
+      button.danger {
+        color: var(--danger);
+        border-color: rgba(218, 54, 51, 0.3);
+      }
+      button.danger:hover {
+        background: rgba(218, 54, 51, 0.1);
+        border-color: var(--danger);
+      }
+
+      /* Canvas Area */
+      .workspace {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        background: #000;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        cursor: crosshair;
+      }
+
+      /* Overlays & Status */
+      .status-bar {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(22, 27, 34, 0.9);
+        border: 1px solid var(--border);
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-family: var(--font-code);
+        font-size: 0.8rem;
+        display: flex;
+        gap: 20px;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        z-index: 10;
+      }
+
+      .metric {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .metric span {
+        color: var(--text-muted);
+      }
+      .metric strong {
+        color: var(--primary);
+      }
+
+      .loader {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+        text-align: center;
+      }
+      .loader.active {
+        opacity: 1;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
+      }
 
-        * { box-sizing: border-box; }
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .modal-overlay.open {
+        opacity: 1;
+        pointer-events: all;
+      }
 
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-ui);
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+      .modal {
+        background: var(--bg-panel);
+        width: 600px;
+        max-width: 90%;
+        max-height: 85vh;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-body {
+        padding: 20px;
+        overflow-y: auto;
+        line-height: 1.6;
+        font-size: 0.95rem;
+      }
+      .modal-body code {
+        background: rgba(110, 118, 129, 0.2);
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-family: var(--font-code);
+      }
+      .modal-body h3 {
+        margin-top: 0;
+        color: var(--text-main);
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+
+      /* Toast */
+      .toast-container {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .toast {
+        background: var(--bg-panel);
+        border-left: 4px solid var(--primary);
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        color: var(--text-main);
+        font-size: 0.9rem;
+        animation: slideIn 0.3s ease-out;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(-20px);
+          opacity: 0;
         }
-
-        /* Header */
-        header {
-            height: 60px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            background: var(--bg-panel);
+        to {
+          transform: translateX(0);
+          opacity: 1;
         }
+      }
 
-        .brand {
-            font-weight: 700;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand span { color: var(--primary); }
-
-        .nav-links button {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin-left: 20px;
-            transition: color 0.2s;
-        }
-
-        .nav-links button:hover { color: var(--text-main); }
-
-        /* Main Layout */
+      /* Responsive */
+      @media (max-width: 800px) {
         main {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            flex: 1;
-            overflow: hidden;
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr 1fr;
         }
-
-        /* Sidebar / Code Editor */
         .sidebar {
-            border-right: 1px solid var(--border);
-            background: var(--bg-panel);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
         }
-
-        h2 {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 15px;
-            margin-top: 0;
-        }
-
-        .code-block {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 15px;
-            font-family: var(--font-code);
-            font-size: 0.85rem;
-            color: #a5d6ff;
-            line-height: 1.5;
-            overflow-x: auto;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .code-block::before {
-            content: "compute/mandelbrot.ts";
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: var(--border);
-            color: var(--text-muted);
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-bottom-left-radius: 6px;
-        }
-
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .btn-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        button.action-btn {
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--bg-input);
-            color: var(--text-main);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        button.action-btn:hover { border-color: var(--text-muted); }
-        
-        button.primary {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        button.primary:hover { background: var(--primary-hover); }
-
-        button.danger {
-            color: var(--danger);
-            border-color: rgba(218, 54, 51, 0.3);
-        }
-        button.danger:hover {
-            background: rgba(218, 54, 51, 0.1);
-            border-color: var(--danger);
-        }
-
-        /* Canvas Area */
-        .workspace {
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            background: #000;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            image-rendering: pixelated;
-            cursor: crosshair;
-        }
-
-        /* Overlays & Status */
-        .status-bar {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(22, 27, 34, 0.9);
-            border: 1px solid var(--border);
-            padding: 10px 15px;
-            border-radius: 6px;
-            font-family: var(--font-code);
-            font-size: 0.8rem;
-            display: flex;
-            gap: 20px;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
-
-        .metric { display: flex; align-items: center; gap: 6px; }
-        .metric span { color: var(--text-muted); }
-        .metric strong { color: var(--primary); }
-
-        .loader {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            text-align: center;
-        }
-        .loader.active { opacity: 1; }
-        
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-        }
-        .modal-overlay.open { opacity: 1; pointer-events: all; }
-
-        .modal {
-            background: var(--bg-panel);
-            width: 600px;
-            max-width: 90%;
-            max-height: 85vh;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .modal-body {
-            padding: 20px;
-            overflow-y: auto;
-            line-height: 1.6;
-            font-size: 0.95rem;
-        }
-        .modal-body code { background: rgba(110,118,129,0.2); padding: 2px 4px; border-radius: 4px; font-family: var(--font-code); }
-        .modal-body h3 { margin-top: 0; color: var(--text-main); }
-        
-        .close-btn {
-            background: none; border: none; color: var(--text-muted);
-            font-size: 1.5rem; cursor: pointer;
-        }
-
-        /* Toast */
-        .toast-container {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .toast {
-            background: var(--bg-panel);
-            border-left: 4px solid var(--primary);
-            padding: 12px 20px;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            color: var(--text-main);
-            font-size: 0.9rem;
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-        /* Responsive */
-        @media (max-width: 800px) {
-            main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-            .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
-        }
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <header>
-        <div class="brand">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-            ComputeKit <span>Demo</span>
-        </div>
-        <nav class="nav-links">
-            <button onclick="toggleModal(true)">Documentation</button>
-            <a href="#" style="color:var(--text-main); text-decoration:none; margin-left:20px; font-size:1.2rem;" aria-label="GitHub">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-            </a>
-        </nav>
+      <div class="brand">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="color: var(--primary)"
+        >
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+        ComputeKit <span>Demo</span>
+      </div>
+      <nav class="nav-links">
+        <button onclick="toggleModal(true)">Documentation</button>
+        <a
+          href="#"
+          style="
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 1.2rem;
+          "
+          aria-label="GitHub"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+            />
+          </svg>
+        </a>
+      </nav>
     </header>
 
     <main>
-        <aside class="sidebar">
-            <h2>Compute Logic (AssemblyScript)</h2>
-            <div class="code-block">
-                <span style="color:#ff7b72">export function</span> <span style="color:#d2a8ff">mandelbrot</span>(<br>
-                &nbsp;&nbsp;w: <span style="color:#79c0ff">i32</span>, h: <span style="color:#79c0ff">i32</span>,<br>
-                &nbsp;&nbsp;zoom: <span style="color:#79c0ff">f64</span>, panX: <span style="color:#79c0ff">f64</span>, panY: <span style="color:#79c0ff">f64</span><br>
-                ): <span style="color:#79c0ff">Int32Array</span> {<br>
-                &nbsp;&nbsp;<span style="color:#8b949e">// Heavy math loop...</span><br>
-                &nbsp;&nbsp;<span style="color:#ff7b72">let</span> iter = <span style="color:#79c0ff">0</span>;<br>
-                &nbsp;&nbsp;<span style="color:#ff7b72">while</span>(x*x + y*y < <span style="color:#79c0ff">4</span>) {<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;x = x*x - y*y + cRe;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;y = <span style="color:#79c0ff">2</span>*x*y + cIm;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;iter++;<br>
-                &nbsp;&nbsp;}<br>
-                &nbsp;&nbsp;<span style="color:#ff7b72">return</span> iterations;<br>
-                }
-            </div>
+      <aside class="sidebar">
+        <h2>Compute Logic (AssemblyScript)</h2>
+        <div class="code-block">
+          <span style="color: #ff7b72">export function</span>
+          <span style="color: #d2a8ff">mandelbrot</span>(<br />
+          &nbsp;&nbsp;w: <span style="color: #79c0ff">i32</span>, h:
+          <span style="color: #79c0ff">i32</span>,<br />
+          &nbsp;&nbsp;zoom: <span style="color: #79c0ff">f64</span>, panX:
+          <span style="color: #79c0ff">f64</span>, panY:
+          <span style="color: #79c0ff">f64</span><br />
+          ): <span style="color: #79c0ff">Int32Array</span> {<br />
+          &nbsp;&nbsp;<span style="color: #8b949e">// Heavy math loop...</span><br />
+          &nbsp;&nbsp;<span style="color: #ff7b72">let</span> iter =
+          <span style="color: #79c0ff">0</span>;<br />
+          &nbsp;&nbsp;<span style="color: #ff7b72">while</span>(x*x + y*y <
+          <span style="color: #79c0ff">4</span>) {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;x = x*x - y*y + cRe;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;y = <span style="color: #79c0ff">2</span>*x*y + cIm;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;iter++;<br />
+          &nbsp;&nbsp;}<br />
+          &nbsp;&nbsp;<span style="color: #ff7b72">return</span> iterations;<br />
+          }
+        </div>
 
-            <div class="controls">
-                <div class="control-group">
-                    <label>Max Iterations: <span id="iter-val">100</span></label>
-                    <input type="range" id="iterations" min="50" max="500" value="100">
-                </div>
-                <div class="control-group">
-                    <label>Zoom Level</label>
-                    <input type="range" id="zoom" min="100" max="5000" value="200">
-                </div>
+        <div class="controls">
+          <div class="control-group">
+            <label>Max Iterations: <span id="iter-val">100</span></label>
+            <input type="range" id="iterations" min="50" max="500" value="100" />
+          </div>
+          <div class="control-group">
+            <label>Zoom Level</label>
+            <input type="range" id="zoom" min="100" max="5000" value="200" />
+          </div>
 
-                <div class="btn-group">
-                    <button class="action-btn danger" id="btn-block">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
-                        Run Blocking
-                    </button>
-                    <button class="action-btn primary" id="btn-async">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>
-                        Run ComputeKit
-                    </button>
-                </div>
-                
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">
-                    <strong>Tip:</strong> Click "Run Blocking" to freeze the browser. Click "Run ComputeKit" for smooth, async execution.
-                </p>
-            </div>
-        </aside>
+          <div class="btn-group">
+            <button class="action-btn danger" id="btn-block">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              </svg>
+              Run Blocking
+            </button>
+            <button class="action-btn primary" id="btn-async">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                ></path>
+              </svg>
+              Run ComputeKit
+            </button>
+          </div>
 
-        <section class="workspace" id="workspace">
-            <canvas id="canvas"></canvas>
-            
-            <div class="loader" id="loader">
-                <div class="spinner"></div>
-                <div>Computing...</div>
-            </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px">
+            <strong>Tip:</strong> Click "Run Blocking" to freeze the browser. Click "Run
+            ComputeKit" for smooth, async execution.
+          </p>
+        </div>
+      </aside>
 
-            <div class="status-bar">
-                <div class="metric">
-                    <span>Time:</span> <strong id="time-display">0ms</strong>
-                </div>
-                <div class="metric">
-                    <span>Mode:</span> <strong id="mode-display">Idle</strong>
-                </div>
-                <div class="metric">
-                    <span>Resolution:</span> <strong id="res-display">0x0</strong>
-                </div>
-            </div>
-        </section>
+      <section class="workspace" id="workspace">
+        <canvas id="canvas"></canvas>
+
+        <div class="loader" id="loader">
+          <div class="spinner"></div>
+          <div>Computing...</div>
+        </div>
+
+        <div class="status-bar">
+          <div class="metric">
+            <span>Time:</span> <strong id="time-display">0ms</strong>
+          </div>
+          <div class="metric">
+            <span>Mode:</span> <strong id="mode-display">Idle</strong>
+          </div>
+          <div class="metric">
+            <span>Resolution:</span> <strong id="res-display">0x0</strong>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- Documentation Modal -->
     <div class="modal-overlay" id="modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 style="margin:0">ComputeKit Documentation</h3>
-                <button class="close-btn" onclick="toggleModal(false)">&times;</button>
-            </div>
-            <div class="modal-body">
-                <h3>What is ComputeKit?</h3>
-                <p>ComputeKit is a tiny toolkit that allows frontend developers to run heavy computations using <strong>WebAssembly + Web Workers</strong> with a simple async API.</p>
-                
-                <h3>Why use it?</h3>
-                <ul>
-                    <li><strong>No Rust required:</strong> Write compute functions in TypeScript-like AssemblyScript.</li>
-                    <li><strong>Non-blocking:</strong> Calculations run in a Web Worker, keeping the UI buttery smooth (60fps).</li>
-                    <li><strong>Automatic Workers:</strong> No need to manually manage `postMessage` or `worker.js` files.</li>
-                </ul>
+      <div class="modal">
+        <div class="modal-header">
+          <h3 style="margin: 0">ComputeKit Documentation</h3>
+          <button class="close-btn" onclick="toggleModal(false)">&times;</button>
+        </div>
+        <div class="modal-body">
+          <h3>What is ComputeKit?</h3>
+          <p>
+            ComputeKit is a tiny toolkit that allows frontend developers to run heavy
+            computations using <strong>WebAssembly + Web Workers</strong> with a simple
+            async API.
+          </p>
 
-                <h3>Example Usage</h3>
-                <pre style="background:var(--bg-input); padding:10px; border-radius:6px; overflow-x:auto;"><code style="color:#a5d6ff"><span style="color:#ff7b72">import</span> { compute } <span style="color:#ff7b72">from</span> <span style="color:#a5d6ff">'@computekit/core'</span>;
+          <h3>Why use it?</h3>
+          <ul>
+            <li>
+              <strong>No Rust required:</strong> Write compute functions in
+              TypeScript-like AssemblyScript.
+            </li>
+            <li>
+              <strong>Non-blocking:</strong> Calculations run in a Web Worker, keeping the
+              UI buttery smooth.
+            </li>
+            <li>
+              <strong>Automatic Workers:</strong> No need to manually manage `postMessage`
+              or `worker.js` files.
+            </li>
+          </ul>
+
+          <h3>Example Usage</h3>
+          <pre
+            style="
+              background: var(--bg-input);
+              padding: 10px;
+              border-radius: 6px;
+              overflow-x: auto;
+            "
+          ><code style="color:#a5d6ff"><span style="color:#ff7b72">import</span> { compute } <span style="color:#ff7b72">from</span> <span style="color:#a5d6ff">'@computekit/core'</span>;
 
 <span style="color:#8b949e">// Define function in ./compute/fib.as</span>
 <span style="color:#ff7b72">const</span> result = <span style="color:#ff7b72">await</span> compute.fibonacci(<span style="color:#79c0ff">1000</span>);
 
 console.log(result); <span style="color:#8b949e">// UI never froze!</span></code></pre>
 
-                <h3>Performance</h3>
-                <p>WebAssembly (WASM) runs at near-native speed. Combined with parallel processing via Workers, you can unlock performance previously impossible in the browser.</p>
-            </div>
+          <h3>Performance</h3>
+          <p>
+            WebAssembly (WASM) runs at near-native speed. Combined with parallel
+            processing via Workers, you can unlock performance previously impossible in
+            the browser.
+          </p>
         </div>
+      </div>
     </div>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
 
     <script>
-        /**
-         * ComputeKit - Runtime Simulation
-         * Since we cannot run an actual AssemblyScript compiler in the browser without
-         * a massive WASM binary, we simulate the *experience* of the library using
-         * actual JavaScript Web Workers wrapped in the ComputeKit API.
-         */
+      /**
+       * ComputeKit - Runtime Simulation
+       * Since we cannot run an actual AssemblyScript compiler in the browser without
+       * a massive WASM binary, we simulate the *experience* of the library using
+       * actual JavaScript Web Workers wrapped in the ComputeKit API.
+       */
 
-        class ComputeKit {
-            constructor() {
-                this.workers = new Map();
-            }
+      class ComputeKit {
+        constructor() {
+          this.workers = new Map();
+        }
 
-            // "Compiles" the function string into a Worker Blob
-            _createWorker(fnString) {
-                const blob = new Blob([`
+        // "Compiles" the function string into a Worker Blob
+        _createWorker(fnString) {
+          const blob = new Blob(
+            [
+              `
                     self.onmessage = function(e) {
                         const { id, data } = e.data;
                         try {
@@ -469,245 +604,250 @@ console.log(result); <span style="color:#8b949e">// UI never froze!</span></code
                             self.postMessage({ id, error: err.message });
                         }
                     };
-                `], { type: 'application/javascript' });
-                return URL.createObjectURL(blob);
-            }
-
-            register(name, fn) {
-                // In a real app, this would handle AS compilation.
-                // Here, we store the function to string-ify it later.
-                this._fnCache = this._fnCache || {};
-                this._fnCache[name] = fn.toString();
-            }
-
-            async run(name, data) {
-                if (!this._fnCache || !this._fnCache[name]) {
-                    throw new Error(`Function ${name} not found.`);
-                }
-
-                return new Promise((resolve, reject) => {
-                    const workerUrl = this._createWorker(this._fnCache[name]);
-                    const worker = new Worker(workerUrl);
-                    
-                    const id = Math.random().toString(36).substr(2, 9);
-                    
-                    const timeout = setTimeout(() => {
-                        worker.terminate();
-                        reject(new Error('Compute timeout'));
-                    }, 10000); // Safety net
-
-                    worker.onmessage = (e) => {
-                        clearTimeout(timeout);
-                        if (e.data.error) {
-                            reject(e.data.error);
-                        } else {
-                            resolve(e.data.result);
-                        }
-                        worker.terminate();
-                        URL.revokeObjectURL(workerUrl);
-                    };
-
-                    worker.postMessage({ id, data });
-                });
-            }
+                `,
+            ],
+            { type: 'application/javascript' }
+          );
+          return URL.createObjectURL(blob);
         }
 
-        // --- Application Logic ---
-
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize
-        const loader = document.getElementById('loader');
-        const timeDisplay = document.getElementById('time-display');
-        const modeDisplay = document.getElementById('mode-display');
-        const resDisplay = document.getElementById('res-display');
-
-        // Inputs
-        const iterInput = document.getElementById('iterations');
-        const iterVal = document.getElementById('iter-val');
-        const zoomInput = document.getElementById('zoom');
-
-        // State
-        let width, height;
-        let isBusy = false;
-
-        // Initialize ComputeKit
-        const kit = new ComputeKit();
-
-        // The "Heavy" Function (Mandelbrot Set)
-        // Note: In real ComputeKit, this would be AssemblyScript
-        const mandelbrotCompute = (data) => {
-            const { width, height, maxIter, zoom, panX, panY } = data;
-            const buffer = new Uint32Array(width * height);
-
-            const w2 = width / 2;
-            const h2 = height / 2;
-            const scale = 1 / zoom;
-
-            for (let y = 0; y < height; y++) {
-                const cIm = (y - h2) * scale + panY;
-                for (let x = 0; x < width; x++) {
-                    const cRe = (x - w2) * scale + panX;
-                    
-                    let Z_re = cRe, Z_im = cIm;
-                    let isInside = true;
-                    let n = 0;
-
-                    for (; n < maxIter; n++) {
-                        const Z_re2 = Z_re * Z_re;
-                        const Z_im2 = Z_im * Z_im;
-                        
-                        if (Z_re2 + Z_im2 > 4) {
-                            isInside = false;
-                            break;
-                        }
-                        
-                        Z_im = 2 * Z_re * Z_im + cIm;
-                        Z_re = Z_re2 - Z_im2 + cRe;
-                    }
-
-                    // Color mapping (ABGR format for Little Endian)
-                    // Using a simple palette based on iterations
-                    if (isInside) {
-                        buffer[y * width + x] = 0xFF000000; // Black
-                    } else {
-                        // Psychedelic-ish colors
-                        const r = (n * 5) % 255;
-                        const g = (n * 10) % 255;
-                        const b = (n * 20) % 255;
-                        buffer[y * width + x] = (255 << 24) | (b << 16) | (g << 8) | r;
-                    }
-                }
-            }
-            return buffer;
-        };
-
-        kit.register('mandelbrot', mandelbrotCompute);
-
-        // --- Core Functions ---
-
-        function resize() {
-            const rect = document.getElementById('workspace').getBoundingClientRect();
-            width = Math.floor(rect.width);
-            height = Math.floor(rect.height);
-            canvas.width = width;
-            canvas.height = height;
-            resDisplay.textContent = `${width}x${height}`;
+        register(name, fn) {
+          // In a real app, this would handle AS compilation.
+          // Here, we store the function to string-ify it later.
+          this._fnCache = this._fnCache || {};
+          this._fnCache[name] = fn.toString();
         }
 
-        async function runComputation(mode) {
-            if (isBusy) return;
-            isBusy = true;
-            loader.classList.add('active');
+        async run(name, data) {
+          if (!this._fnCache || !this._fnCache[name]) {
+            throw new Error(`Function ${name} not found.`);
+          }
 
-            const maxIter = parseInt(iterInput.value);
-            const zoom = parseInt(zoomInput.value);
-            const data = {
-                width,
-                height,
-                maxIter,
-                zoom: zoom * (height / 400), // Adjust zoom based on screen size
-                panX: -0.7,
-                panY: 0.0
+          return new Promise((resolve, reject) => {
+            const workerUrl = this._createWorker(this._fnCache[name]);
+            const worker = new Worker(workerUrl);
+
+            const id = Math.random().toString(36).substr(2, 9);
+
+            const timeout = setTimeout(() => {
+              worker.terminate();
+              reject(new Error('Compute timeout'));
+            }, 10000); // Safety net
+
+            worker.onmessage = (e) => {
+              clearTimeout(timeout);
+              if (e.data.error) {
+                reject(e.data.error);
+              } else {
+                resolve(e.data.result);
+              }
+              worker.terminate();
+              URL.revokeObjectURL(workerUrl);
             };
 
-            const startTime = performance.now();
-            let resultBuffer;
+            worker.postMessage({ id, data });
+          });
+        }
+      }
 
-            try {
-                if (mode === 'worker') {
-                    modeDisplay.textContent = "ComputeKit (Worker)";
-                    modeDisplay.style.color = "var(--primary)";
-                    
-                    // Run via ComputeKit
-                    resultBuffer = await kit.run('mandelbrot', data);
-                    
-                    showToast("✅ Computation finished via Worker");
+      // --- Application Logic ---
 
-                } else {
-                    modeDisplay.textContent = "Blocking (Main Thread)";
-                    modeDisplay.style.color = "var(--danger)";
-                    
-                    // Allow UI to update to "Blocking" before freezing
-                    await new Promise(r => setTimeout(r, 50));
-                    
-                    // Run directly on main thread (This will freeze the UI!)
-                    resultBuffer = mandelbrotCompute(data);
-                    
-                    showToast("⚠️ Main thread was frozen!");
-                }
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d', { alpha: false }); // Optimize
+      const loader = document.getElementById('loader');
+      const timeDisplay = document.getElementById('time-display');
+      const modeDisplay = document.getElementById('mode-display');
+      const resDisplay = document.getElementById('res-display');
 
-                // Render to canvas
-                const imageData = new ImageData(new Uint8ClampedArray(resultBuffer.buffer), width, height);
-                ctx.putImageData(imageData, 0, 0);
+      // Inputs
+      const iterInput = document.getElementById('iterations');
+      const iterVal = document.getElementById('iter-val');
+      const zoomInput = document.getElementById('zoom');
 
-            } catch (err) {
-                console.error(err);
-                showToast("Error: " + err.message);
-            } finally {
-                const endTime = performance.now();
-                timeDisplay.textContent = (endTime - startTime).toFixed(1) + 'ms';
-                loader.classList.remove('active');
-                isBusy = false;
+      // State
+      let width, height;
+      let isBusy = false;
+
+      // Initialize ComputeKit
+      const kit = new ComputeKit();
+
+      // The "Heavy" Function (Mandelbrot Set)
+      // Note: In real ComputeKit, this would be AssemblyScript
+      const mandelbrotCompute = (data) => {
+        const { width, height, maxIter, zoom, panX, panY } = data;
+        const buffer = new Uint32Array(width * height);
+
+        const w2 = width / 2;
+        const h2 = height / 2;
+        const scale = 1 / zoom;
+
+        for (let y = 0; y < height; y++) {
+          const cIm = (y - h2) * scale + panY;
+          for (let x = 0; x < width; x++) {
+            const cRe = (x - w2) * scale + panX;
+
+            let Z_re = cRe,
+              Z_im = cIm;
+            let isInside = true;
+            let n = 0;
+
+            for (; n < maxIter; n++) {
+              const Z_re2 = Z_re * Z_re;
+              const Z_im2 = Z_im * Z_im;
+
+              if (Z_re2 + Z_im2 > 4) {
+                isInside = false;
+                break;
+              }
+
+              Z_im = 2 * Z_re * Z_im + cIm;
+              Z_re = Z_re2 - Z_im2 + cRe;
             }
+
+            // Color mapping (ABGR format for Little Endian)
+            // Using a simple palette based on iterations
+            if (isInside) {
+              buffer[y * width + x] = 0xff000000; // Black
+            } else {
+              // Psychedelic-ish colors
+              const r = (n * 5) % 255;
+              const g = (n * 10) % 255;
+              const b = (n * 20) % 255;
+              buffer[y * width + x] = (255 << 24) | (b << 16) | (g << 8) | r;
+            }
+          }
         }
+        return buffer;
+      };
 
-        // --- UI Helpers ---
+      kit.register('mandelbrot', mandelbrotCompute);
 
-        function showToast(msg) {
-            const container = document.getElementById('toast-container');
-            const el = document.createElement('div');
-            el.className = 'toast';
-            el.textContent = msg;
-            container.appendChild(el);
-            setTimeout(() => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(10px)';
-                setTimeout(() => el.remove(), 300);
-            }, 3000);
-        }
+      // --- Core Functions ---
 
-        window.toggleModal = (open) => {
-            const el = document.getElementById('modal');
-            if (open) el.classList.add('open');
-            else el.classList.remove('open');
+      function resize() {
+        const rect = document.getElementById('workspace').getBoundingClientRect();
+        width = Math.floor(rect.width);
+        height = Math.floor(rect.height);
+        canvas.width = width;
+        canvas.height = height;
+        resDisplay.textContent = `${width}x${height}`;
+      }
+
+      async function runComputation(mode) {
+        if (isBusy) return;
+        isBusy = true;
+        loader.classList.add('active');
+
+        const maxIter = parseInt(iterInput.value);
+        const zoom = parseInt(zoomInput.value);
+        const data = {
+          width,
+          height,
+          maxIter,
+          zoom: zoom * (height / 400), // Adjust zoom based on screen size
+          panX: -0.7,
+          panY: 0.0,
         };
 
-        // --- Event Listeners ---
+        const startTime = performance.now();
+        let resultBuffer;
 
-        document.getElementById('iterations').addEventListener('input', (e) => {
-            iterVal.textContent = e.target.value;
-        });
+        try {
+          if (mode === 'worker') {
+            modeDisplay.textContent = 'ComputeKit (Worker)';
+            modeDisplay.style.color = 'var(--primary)';
 
-        document.getElementById('btn-async').addEventListener('click', () => {
-            runComputation('worker');
-        });
+            // Run via ComputeKit
+            resultBuffer = await kit.run('mandelbrot', data);
 
-        document.getElementById('btn-block').addEventListener('click', () => {
-            runComputation('block');
-        });
-        
-        // Allow clicking canvas to center (optional simple interaction)
-        canvas.addEventListener('mousedown', () => {
-             if(isBusy) return;
-             // Just a visual effect to show it's alive during heavy loads if we weren't blocking
-             canvas.style.cursor = 'wait';
-        });
-        canvas.addEventListener('mouseup', () => {
-             canvas.style.cursor = 'crosshair';
-        });
+            showToast('✅ Computation finished via Worker');
+          } else {
+            modeDisplay.textContent = 'Blocking (Main Thread)';
+            modeDisplay.style.color = 'var(--danger)';
 
-        // Initialization
-        window.addEventListener('resize', resize);
-        window.addEventListener('load', () => {
-            resize();
-            // Initial render with low iterations
-            iterInput.value = 50;
-            iterVal.textContent = 50;
-            runComputation('worker');
-            iterInput.value = 100; // Reset to default
-            iterVal.textContent = 100;
-        });
+            // Allow UI to update to "Blocking" before freezing
+            await new Promise((r) => setTimeout(r, 50));
 
+            // Run directly on main thread (This will freeze the UI!)
+            resultBuffer = mandelbrotCompute(data);
+
+            showToast('⚠️ Main thread was frozen!');
+          }
+
+          // Render to canvas
+          const imageData = new ImageData(
+            new Uint8ClampedArray(resultBuffer.buffer),
+            width,
+            height
+          );
+          ctx.putImageData(imageData, 0, 0);
+        } catch (err) {
+          console.error(err);
+          showToast('Error: ' + err.message);
+        } finally {
+          const endTime = performance.now();
+          timeDisplay.textContent = (endTime - startTime).toFixed(1) + 'ms';
+          loader.classList.remove('active');
+          isBusy = false;
+        }
+      }
+
+      // --- UI Helpers ---
+
+      function showToast(msg) {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = 'toast';
+        el.textContent = msg;
+        container.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(10px)';
+          setTimeout(() => el.remove(), 300);
+        }, 3000);
+      }
+
+      window.toggleModal = (open) => {
+        const el = document.getElementById('modal');
+        if (open) el.classList.add('open');
+        else el.classList.remove('open');
+      };
+
+      // --- Event Listeners ---
+
+      document.getElementById('iterations').addEventListener('input', (e) => {
+        iterVal.textContent = e.target.value;
+      });
+
+      document.getElementById('btn-async').addEventListener('click', () => {
+        runComputation('worker');
+      });
+
+      document.getElementById('btn-block').addEventListener('click', () => {
+        runComputation('block');
+      });
+
+      // Allow clicking canvas to center (optional simple interaction)
+      canvas.addEventListener('mousedown', () => {
+        if (isBusy) return;
+        // Just a visual effect to show it's alive during heavy loads if we weren't blocking
+        canvas.style.cursor = 'wait';
+      });
+      canvas.addEventListener('mouseup', () => {
+        canvas.style.cursor = 'crosshair';
+      });
+
+      // Initialization
+      window.addEventListener('resize', resize);
+      window.addEventListener('load', () => {
+        resize();
+        // Initial render with low iterations
+        iterInput.value = 50;
+        iterVal.textContent = 50;
+        runComputation('worker');
+        iterInput.value = 100; // Reset to default
+        iterVal.textContent = 100;
+      });
     </script>
-</body>
+  </body>
 </html>

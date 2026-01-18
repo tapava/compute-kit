@@ -8,6 +8,9 @@ build/
 *.wasm
 *.wasm.map
 
+# But include the demo WASM file for StackBlitz
+!examples/react-demo/public/compute.wasm
+
 # IDE
 .idea/
 .vscode/
@@ -29,6 +32,9 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+
+# npm tokens - NEVER commit these!
+.npmrc
 
 # Temporary files
 *.tmp
