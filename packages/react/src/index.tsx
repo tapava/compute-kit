@@ -20,6 +20,11 @@ import {
   type ComputeOptions,
   type ComputeProgress,
   type PoolStats,
+  type ComputeFunctionRegistry,
+  type RegisteredFunctionName,
+  type FunctionInput,
+  type FunctionOutput,
+  type ComputeFn,
 } from '@computekit/core';
 
 // ============================================================================
@@ -303,6 +308,7 @@ export interface UseComputeOptions extends ComputeOptions {
  *
  * @example
  * ```tsx
+ * // Basic usage with explicit types
  * function FibonacciCalculator() {
  *   const { data, loading, error, run } = useCompute<number, number>('fibonacci');
  *
@@ -317,17 +323,43 @@ export interface UseComputeOptions extends ComputeOptions {
  *     </div>
  *   );
  * }
+ *
+ * // With typed registry (extend ComputeFunctionRegistry for autocomplete)
+ * // declare module '@computekit/core' {
+ * //   interface ComputeFunctionRegistry {
+ * //     fibonacci: { input: number; output: number };
+ * //   }
+ * // }
+ * // const { data, run } = useCompute('fibonacci'); // Types are inferred!
  * ```
  */
-export function useCompute<TInput = unknown, TOutput = unknown>(
-  functionName: string,
+export function useCompute<
+  TName extends RegisteredFunctionName,
+  TInput = FunctionInput<TName extends string ? TName : never>,
+  TOutput = FunctionOutput<TName extends string ? TName : never>,
+>(
+  functionName: TName,
   options: UseComputeOptions = {}
-): UseComputeReturn<TInput, TOutput> {
+): UseComputeReturn<
+  TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TInput,
+  TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput
+> {
+  type ActualInput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TInput;
+  type ActualOutput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput;
+
   const kit = useComputeKit();
   const abortControllerRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
 
-  const [state, setState] = useState<UseComputeState<TOutput>>({
+  const [state, setState] = useState<UseComputeState<ActualOutput>>({
     data: null,
     loading: false,
     error: null,
@@ -360,7 +392,7 @@ export function useCompute<TInput = unknown, TOutput = unknown>(
   }, []);
 
   const run = useCallback(
-    async (input: TInput, runOptions?: ComputeOptions) => {
+    async (input: ActualInput, runOptions?: ComputeOptions) => {
       // Cancel any ongoing computation
       cancel();
       cancelledRef.current = false;
@@ -383,7 +415,7 @@ export function useCompute<TInput = unknown, TOutput = unknown>(
       }
 
       try {
-        const result = await kit.run<TInput, TOutput>(functionName, input, {
+        const result = (await kit.run(functionName, input, {
           ...options,
           ...runOptions,
           signal: runOptions?.signal ?? abortController.signal,
@@ -392,7 +424,7 @@ export function useCompute<TInput = unknown, TOutput = unknown>(
             options.onProgress?.(progress);
             runOptions?.onProgress?.(progress);
           },
-        });
+        })) as ActualOutput;
 
         if (!abortController.signal.aborted) {
           setState({
@@ -421,7 +453,7 @@ export function useCompute<TInput = unknown, TOutput = unknown>(
   // Auto-run on mount if configured
   useEffect(() => {
     if (options.autoRun && options.initialInput !== undefined) {
-      run(options.initialInput as TInput);
+      run(options.initialInput as ActualInput);
     }
     // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -439,7 +471,7 @@ export function useCompute<TInput = unknown, TOutput = unknown>(
     run,
     reset,
     cancel,
-  };
+  } as UseComputeReturn<ActualInput, ActualOutput>;
 }
 
 // ============================================================================
@@ -451,6 +483,7 @@ export function useCompute<TInput = unknown, TOutput = unknown>(
  *
  * @example
  * ```tsx
+ * // Basic usage with explicit types
  * function Calculator() {
  *   const calculate = useComputeCallback<number[], number>('sum');
  *
@@ -461,20 +494,43 @@ export function useCompute<TInput = unknown, TOutput = unknown>(
  *
  *   return <button onClick={handleClick}>Calculate Sum</button>;
  * }
+ *
+ * // With typed registry - types are inferred!
+ * // const calculate = useComputeCallback('sum');
  * ```
  */
-export function useComputeCallback<TInput = unknown, TOutput = unknown>(
-  functionName: string,
+export function useComputeCallback<
+  TName extends RegisteredFunctionName,
+  TInput = FunctionInput<TName extends string ? TName : never>,
+  TOutput = FunctionOutput<TName extends string ? TName : never>,
+>(
+  functionName: TName,
   options?: ComputeOptions
-): (input: TInput, runOptions?: ComputeOptions) => Promise<TOutput> {
+): (
+  input: TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TInput,
+  runOptions?: ComputeOptions
+) => Promise<
+  TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput
+> {
+  type ActualInput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TInput;
+  type ActualOutput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput;
+
   const kit = useComputeKit();
 
   return useCallback(
-    (input: TInput, runOptions?: ComputeOptions) => {
-      return kit.run<TInput, TOutput>(functionName, input, {
+    (input: ActualInput, runOptions?: ComputeOptions): Promise<ActualOutput> => {
+      return kit.run(functionName, input, {
         ...options,
         ...runOptions,
-      });
+      }) as Promise<ActualOutput>;
     },
     [kit, functionName, options]
   );
@@ -489,6 +545,7 @@ export function useComputeCallback<TInput = unknown, TOutput = unknown>(
  *
  * @example
  * ```tsx
+ * // Basic usage
  * function MyComponent() {
  *   const { run, loading, data } = useComputeFunction(
  *     'myFunction',
@@ -501,13 +558,36 @@ export function useComputeCallback<TInput = unknown, TOutput = unknown>(
  *     </button>
  *   );
  * }
+ *
+ * // With typed registry - provides autocomplete and type safety
+ * // declare module '@computekit/core' {
+ * //   interface ComputeFunctionRegistry {
+ * //     myFunction: { input: number; output: number };
+ * //   }
+ * // }
  * ```
  */
-export function useComputeFunction<TInput = unknown, TOutput = unknown>(
-  name: string,
-  fn: (input: TInput) => TOutput | Promise<TOutput>,
+export function useComputeFunction<
+  TName extends RegisteredFunctionName,
+  TInput = FunctionInput<TName extends string ? TName : never>,
+  TOutput = FunctionOutput<TName extends string ? TName : never>,
+>(
+  name: TName,
+  fn: TName extends keyof ComputeFunctionRegistry
+    ? ComputeFn<
+        ComputeFunctionRegistry[TName]['input'],
+        ComputeFunctionRegistry[TName]['output']
+      >
+    : ComputeFn<TInput, TOutput>,
   options?: UseComputeOptions
-): UseComputeReturn<TInput, TOutput> {
+): UseComputeReturn<
+  TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TInput,
+  TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput
+> {
   const kit = useComputeKit();
 
   // Register function on mount
@@ -515,7 +595,7 @@ export function useComputeFunction<TInput = unknown, TOutput = unknown>(
     kit.register(name, fn);
   }, [kit, name, fn]);
 
-  return useCompute<TInput, TOutput>(name, options);
+  return useCompute(name, options);
 }
 
 // ============================================================================
@@ -1397,6 +1477,7 @@ export interface UseParallelBatchReturn<TItem, TOutput> {
  *
  * @example
  * ```tsx
+ * // Basic usage with explicit types
  * function BatchProcessor() {
  *   const batch = useParallelBatch<string, ProcessedFile>('processFile', {
  *     concurrency: 4
@@ -1427,20 +1508,41 @@ export interface UseParallelBatchReturn<TItem, TOutput> {
  *     </div>
  *   );
  * }
+ *
+ * // With typed registry - types are inferred!
+ * // const batch = useParallelBatch('processFile');
  * ```
  */
-export function useParallelBatch<TItem = unknown, TOutput = unknown>(
-  functionName: string,
+export function useParallelBatch<
+  TName extends RegisteredFunctionName,
+  TItem = FunctionInput<TName extends string ? TName : never>,
+  TOutput = FunctionOutput<TName extends string ? TName : never>,
+>(
+  functionName: TName,
   options: {
     concurrency?: number;
     computeOptions?: ComputeOptions;
   } = {}
-): UseParallelBatchReturn<TItem, TOutput> {
+): UseParallelBatchReturn<
+  TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TItem,
+  TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput
+> {
+  type ActualItem = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['input']
+    : TItem;
+  type ActualOutput = TName extends keyof ComputeFunctionRegistry
+    ? ComputeFunctionRegistry[TName]['output']
+    : TOutput;
+
   const kit = useComputeKit();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [state, setState] = useState<{
-    result: ParallelBatchResult<TOutput> | null;
+    result: ParallelBatchResult<ActualOutput> | null;
     loading: boolean;
     progress: number;
     completedCount: number;
@@ -1454,7 +1556,7 @@ export function useParallelBatch<TItem = unknown, TOutput = unknown>(
   });
 
   const run = useCallback(
-    async (items: TItem[]): Promise<ParallelBatchResult<TOutput>> => {
+    async (items: ActualItem[]): Promise<ParallelBatchResult<ActualOutput>> => {
       // Cancel any existing batch
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -1472,7 +1574,7 @@ export function useParallelBatch<TItem = unknown, TOutput = unknown>(
       });
 
       const startTime = performance.now();
-      const results: BatchItemResult<TOutput>[] = [];
+      const results: BatchItemResult<ActualOutput>[] = [];
       const concurrency = options.concurrency ?? items.length;
 
       // Process in batches based on concurrency
@@ -1487,12 +1589,12 @@ export function useParallelBatch<TItem = unknown, TOutput = unknown>(
           const itemStart = performance.now();
 
           try {
-            const data = await kit.run<TItem, TOutput>(functionName, item, {
+            const data = (await kit.run(functionName, item, {
               ...options.computeOptions,
               signal: abortController.signal,
-            });
+            })) as ActualOutput;
 
-            const itemResult: BatchItemResult<TOutput> = {
+            const itemResult: BatchItemResult<ActualOutput> = {
               index,
               success: true,
               data,
@@ -1501,7 +1603,7 @@ export function useParallelBatch<TItem = unknown, TOutput = unknown>(
 
             return itemResult;
           } catch (err) {
-            const itemResult: BatchItemResult<TOutput> = {
+            const itemResult: BatchItemResult<ActualOutput> = {
               index,
               success: false,
               error: err instanceof Error ? err : new Error(String(err)),
@@ -1527,12 +1629,12 @@ export function useParallelBatch<TItem = unknown, TOutput = unknown>(
       const totalDuration = performance.now() - startTime;
       const successful = results
         .filter((r) => r.success && r.data !== undefined)
-        .map((r) => r.data as TOutput);
+        .map((r) => r.data as ActualOutput);
       const failed = results
         .filter((r) => !r.success)
         .map((r) => ({ index: r.index, error: r.error! }));
 
-      const finalResult: ParallelBatchResult<TOutput> = {
+      const finalResult: ParallelBatchResult<ActualOutput> = {
         results,
         successful,
         failed,
@@ -1587,7 +1689,7 @@ export function useParallelBatch<TItem = unknown, TOutput = unknown>(
     run,
     cancel,
     reset,
-  };
+  } as UseParallelBatchReturn<ActualItem, ActualOutput>;
 }
 
 // ============================================================================
@@ -1599,6 +1701,15 @@ export type {
   ComputeOptions,
   ComputeProgress,
   PoolStats,
+  // Typed registry exports
+  ComputeFunctionRegistry,
+  RegisteredFunctionName,
+  FunctionInput,
+  FunctionOutput,
+  ComputeFn,
+  InferComputeFn,
+  DefineFunction,
+  HasRegisteredFunctions,
 } from '@computekit/core';
 
 export { ComputeKit } from '@computekit/core';
