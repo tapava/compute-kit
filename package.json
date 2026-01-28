@@ -1,6 +1,6 @@
 {
   "name": "computekit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "WASM + Worker toolkit for React & Web apps. Run heavy logic fast, safely, and without blocking the UI.",
   "private": true,
   "type": "module",

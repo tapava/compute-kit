@@ -1,6 +1,6 @@
 {
   "name": "@computekit/react-query",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "TanStack Query integration for ComputeKit - lightweight async compute with caching",
   "type": "module",
   "main": "./dist/index.cjs",
