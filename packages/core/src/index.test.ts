@@ -29,6 +29,19 @@ describe('ComputeKit', () => {
       });
       expect(customKit).toBeInstanceOf(ComputeKit);
     });
+
+    it('should accept remoteDependencyNames option', () => {
+      const customKit = new ComputeKit({
+        remoteDependencies: [
+          'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js',
+        ],
+        remoteDependencyNames: {
+          'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js':
+            'dayjs',
+        },
+      });
+      expect(customKit).toBeInstanceOf(ComputeKit);
+    });
   });
 
   describe('register', () => {

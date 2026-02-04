@@ -17,6 +17,8 @@ export interface ComputeKitOptions {
   useSharedMemory?: boolean;
   /** Remote scripts to load in workers via importScripts */
   remoteDependencies?: string[];
+  /** Maps remote dependency URLs to their global variable names (useful for handling obfuscation in production builds) */
+  remoteDependencyNames?: Record<string, string>;
 }
 
 /** Options for individual compute operations */

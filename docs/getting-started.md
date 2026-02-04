@@ -152,9 +152,17 @@ const kit = new ComputeKit({
   // External scripts to load in workers
   remoteDependencies: [
     'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js',
   ],
+
+  // Maps remote dependency URLs to variable names (handles obfuscation in production builds)
+  // When your code is minified, variable names like 'dayjs' become obfuscated (e.g., 'Ke')
+  // This mapping ensures the worker can access the library under the obfuscated name
+  remoteDependencyNames: {
+    'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js': 'dayjs',
+  },
 });
-```
+``````
 
 ---
 

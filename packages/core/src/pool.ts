@@ -89,6 +89,7 @@ export class WorkerPool {
       workerPath: options.workerPath ?? '',
       useSharedMemory: options.useSharedMemory ?? true,
       remoteDependencies: options.remoteDependencies ?? [],
+      remoteDependencyNames: options.remoteDependencyNames ?? {},
     };
 
     this.logger = createLogger('ComputeKit:Pool', this.options.debug);
@@ -318,8 +319,34 @@ export class WorkerPool {
         ? `importScripts(${remoteDeps.map((url) => `"${url}"`).join(', ')});`
         : '';
 
+    // Generate alias assignments for remote dependencies to handle obfuscated names in production
+    // This allows the worker to access third-party libraries under their obfuscated names if needed
+    const dependencyAliases = this.options.remoteDependencyNames;
+    let aliasCode = '';
+    
+    if (Object.keys(dependencyAliases).length > 0) {
+      const aliases: string[] = [];
+      for (const [url, varName] of Object.entries(dependencyAliases)) {
+        // Try to extract the global variable name that will be created by the library
+        const globalName = this.extractGlobalNameFromUrl(url);
+        if (globalName && globalName !== varName) {
+          // Create an alias from the detected global name to the specified varName
+          // This handles cases where the library name differs from the import name in obfuscated code
+          aliases.push(
+            `if (typeof ${globalName} !== 'undefined' && typeof self.${varName} === 'undefined') {` +
+            ` self.${varName} = ${globalName}; ` +
+            `}`
+          );
+        }
+      }
+      aliasCode = aliases.join('\n');
+    }
+
     const workerCode = `
 ${importScriptsCode}
+
+// Create aliases for obfuscated names in production builds
+${aliasCode}
 
 const functions = {
 ${functionsCode}
@@ -350,6 +377,24 @@ self.postMessage({ type: 'ready' });
 
     const blob = new Blob([workerCode], { type: 'application/javascript' });
     return URL.createObjectURL(blob);
+  }
+
+  /**
+   * Extract the likely global variable name from a URL
+   * e.g., "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js" -> "dayjs"
+   */
+  private extractGlobalNameFromUrl(url: string): string | null {
+    try {
+      const pathname = new URL(url).pathname;
+      const filename = pathname.split('/').pop() || '';
+      // Remove common suffixes: .min.js, .js, .min.mjs, .mjs
+      const bareFilename = filename
+        .replace(/\.min\.(js|mjs)$/, '')
+        .replace(/\.(js|mjs)$/, '');
+      return bareFilename || null;
+    } catch {
+      return null;
+    }
   }
 
   /**

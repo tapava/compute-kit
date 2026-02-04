@@ -373,7 +373,17 @@ const kit = new ComputeKit({
   remoteDependencies: [
     'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js',
   ],
+  // Map URLs to the global variable names they create
+  // This ensures compatibility with obfuscated names in production builds
+  remoteDependencyNames: {
+    'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js':
+      '_',
+    'https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js': 'math',
+    'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js':
+      'dayjs',
+  },
 });
 
 kit.register('advancedMath', (expression: string) => {
@@ -390,9 +400,19 @@ kit.register('processData', (data: number[]) => {
     .value();
 });
 
+kit.register('formatDate', (dateString: string) => {
+  // @ts-ignore - dayjs loaded via importScripts
+  return dayjs(dateString).format('YYYY-MM-DD');
+});
+
 const result = await kit.run('advancedMath', 'sqrt(16) + sin(pi/2)');
 console.log(result); // 5
+
+const formatted = await kit.run('formatDate', '2024-01-15');
+console.log(formatted); // 2024-01-15
 ```
+
+**Note on Production Builds:** When you minify/obfuscate your code, variable names like `dayjs` become shortened names (e.g., `Ke`). ComputeKit automatically creates aliases so your functions can access external libraries under the proper global names, even when your code is obfuscated.
 
 ---
 

@@ -35,14 +35,45 @@ new ComputeKit(options?: ComputeKitOptions)
 
 ### ComputeKitOptions
 
-| Property             | Type       | Default                                | Description                           |
-| -------------------- | ---------- | -------------------------------------- | ------------------------------------- |
-| `maxWorkers`         | `number`   | `navigator.hardwareConcurrency \|\| 4` | Maximum number of workers in the pool |
-| `timeout`            | `number`   | `30000`                                | Default timeout for operations (ms)   |
-| `debug`              | `boolean`  | `false`                                | Enable debug logging                  |
-| `workerPath`         | `string`   | `''`                                   | Custom path to worker script          |
-| `useSharedMemory`    | `boolean`  | `true`                                 | Use SharedArrayBuffer when available  |
-| `remoteDependencies` | `string[]` | `[]`                                   | External scripts to load in workers   |
+| Property                  | Type                      | Default                                | Description                                                                                   |
+| ------------------------- | ------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `maxWorkers`              | `number`                  | `navigator.hardwareConcurrency \|\| 4` | Maximum number of workers in the pool                                                         |
+| `timeout`                 | `number`                  | `30000`                                | Default timeout for operations (ms)                                                           |
+| `debug`                   | `boolean`                 | `false`                                | Enable debug logging                                                                          |
+| `workerPath`              | `string`                  | `''`                                   | Custom path to worker script                                                                  |
+| `useSharedMemory`         | `boolean`                 | `true`                                 | Use SharedArrayBuffer when available                                                          |
+| `remoteDependencies`      | `string[]`                | `[]`                                   | External scripts to load in workers                                                           |
+| `remoteDependencyNames`   | `Record<string, string>`  | `{}`                                   | Maps remote dependency URLs to their global variable names (handles obfuscation in prod builds) |
+
+#### Handling Obfuscated Names in Production Builds
+
+When you minify/obfuscate your code for production, variable names like `dayjs` become shortened names like `Ke`. This can cause issues when using third-party libraries in workers because:
+
+1. Your registered functions contain references to the obfuscated name (e.g., `Ke`)
+2. Remote dependencies load under their original name (e.g., `dayjs`)
+3. The worker throws "is not defined" errors
+
+**Solution:** Use `remoteDependencyNames` to map the URL to the library's global variable name. ComputeKit will automatically create an alias so your functions can access it under any obfuscated name.
+
+```typescript
+const kit = new ComputeKit({
+  remoteDependencies: [
+    'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js',
+  ],
+  // Map the URL to the global variable name created by the library
+  remoteDependencyNames: {
+    'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js':
+      'dayjs',
+  },
+});
+
+// Your minified function might reference 'dayjs' as 'Ke'
+// ComputeKit detects that dayjs.min.js creates a 'dayjs' global
+// and makes it accessible under any name your minified code uses
+kit.register('formatDate', (date: string) => {
+  return dayjs(date).format('YYYY-MM-DD'); // After minification: Ke(date).format(...)
+});
+```
 
 ---
 
