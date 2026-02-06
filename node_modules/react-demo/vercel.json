@@ -1,0 +1,19 @@
+{
+  "headers": [
+    {
+      "source": "/(.*).wasm",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/wasm"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!assets|compute\\.wasm|compute\\.js|compute\\.d\\.ts).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
