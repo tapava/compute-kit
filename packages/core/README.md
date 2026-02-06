@@ -58,14 +58,30 @@ const kit = new ComputeKit({
   ],
 });
 
+// Declare the global type for TypeScript support
+declare const _: typeof import('lodash');
+
 // Now you can use lodash inside your compute functions
 kit.register('processData', (data: number[]) => {
-  // @ts-ignore - lodash is loaded via importScripts
   return _.chunk(data, 3);
 });
 ```
 
 **Note:** Remote scripts must be served with proper CORS headers.
+
+> ⚠️ **Minification Warning**
+>
+> Use `declare const` instead of `import` for remote dependencies. Minifiers rename imported variables, which breaks function serialization:
+>
+> ```typescript
+> // ✅ Works after minification
+> declare const dayjs: typeof import('dayjs');
+> kit.register('format', (d) => dayjs(d).format());
+>
+> // ❌ Breaks after minification
+> import dayjs from 'dayjs';
+> kit.register('format', (d) => dayjs(d).format());
+> ```
 
 ### `kit.register(name, fn)`
 

@@ -390,11 +390,31 @@ const kit = new ComputeKit({
   ],
 });
 
+// Declare the global type for TypeScript support
+declare const _: typeof import('lodash');
+
 kit.register('processData', (data: number[]) => {
-  // @ts-ignore - lodash loaded via importScripts
   return _.chunk(data, 3);
 });
 ```
+
+> ⚠️ **Important: Minification Compatibility**
+>
+> When using remote dependencies, use `declare const` instead of `import` to ensure compatibility with production minifiers (Vite, esbuild, etc.).
+>
+> ```typescript
+> // ✅ Correct - works after minification
+> declare const dayjs: typeof import('dayjs');
+> kit.register('format', (d) => dayjs(d).format());
+>
+> // ❌ Incorrect - breaks after minification
+> import dayjs from 'dayjs';
+> kit.register('format', (d) => dayjs(d).format());
+> ```
+>
+> This is because minifiers rename imported variables but preserve free variables declared with `declare const`.
+
+````
 
 #### Methods
 
@@ -414,7 +434,7 @@ await kit.run('myFunction', data, {
   signal: abortController.signal, // Abort support
   onProgress: (p) => {}, // Progress callback
 });
-```
+````
 
 ---
 
