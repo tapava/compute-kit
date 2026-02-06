@@ -376,13 +376,15 @@ const kit = new ComputeKit({
   ],
 });
 
+// Declare globals for TypeScript support (and minification compatibility!)
+declare const math: typeof import('mathjs');
+declare const _: typeof import('lodash');
+
 kit.register('advancedMath', (expression: string) => {
-  // @ts-ignore - math.js loaded via importScripts
   return math.evaluate(expression);
 });
 
 kit.register('processData', (data: number[]) => {
-  // @ts-ignore - lodash loaded via importScripts
   return _.chain(data)
     .filter((n) => n > 0)
     .map((n) => n * 2)
@@ -393,6 +395,22 @@ kit.register('processData', (data: number[]) => {
 const result = await kit.run('advancedMath', 'sqrt(16) + sin(pi/2)');
 console.log(result); // 5
 ```
+
+{: .warning }
+
+> **Important: Minification Compatibility**
+>
+> Always use `declare const` instead of `import` for libraries loaded via `remoteDependencies`. Minifiers rename imported variables, breaking function serialization in production builds.
+>
+> ```typescript
+> // ✅ Correct - preserved after minification
+> declare const dayjs: typeof import('dayjs');
+> kit.register('format', (d) => dayjs(d).format());
+>
+> // ❌ Incorrect - "dayjs" gets renamed to "a" or similar
+> import dayjs from 'dayjs';
+> kit.register('format', (d) => dayjs(d).format());
+> ```
 
 ---
 
