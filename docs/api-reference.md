@@ -44,6 +44,10 @@ new ComputeKit(options?: ComputeKitOptions)
 | `useSharedMemory`    | `boolean`  | `true`                                 | Use SharedArrayBuffer when available  |
 | `remoteDependencies` | `string[]` | `[]`                                   | External scripts to load in workers   |
 
+{: .note }
+
+> When using `remoteDependencies`, use `declare const` instead of `import` for the libraries. See [Using External Libraries]({{ site.baseurl }}/examples#using-external-libraries) for details on minification compatibility.
+
 ---
 
 ## Typed Registry

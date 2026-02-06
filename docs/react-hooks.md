@@ -52,6 +52,10 @@ function App() {
 | `debug`              | `boolean`  | `false`                         | Enable debug logging         |
 | `remoteDependencies` | `string[]` | `[]`                            | External scripts for workers |
 
+{: .note }
+
+> When using `remoteDependencies`, use `declare const` instead of `import` for external libraries to ensure minification compatibility. See the [Examples page]({{ site.baseurl }}/examples#using-external-libraries) for details.
+
 ---
 
 ## useComputeKit
