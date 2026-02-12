@@ -154,6 +154,11 @@ const kit = new ComputeKit({
     'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
   ],
 });
+
+// When using remoteDependencies, declare globals instead of importing
+declare const _: typeof import('lodash');
+
+kit.register('chunk', (arr: number[]) => _.chunk(arr, 2));
 ```
 
 ---
