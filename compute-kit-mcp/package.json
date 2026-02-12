@@ -1,0 +1,59 @@
+{
+  "name": "computekit-mcp",
+  "displayName": "ComputeKit MCP Server",
+  "description": "MCP server for ComputeKit documentation — provides AI assistants with context about ComputeKit's Web Workers, WASM, and React hooks APIs.",
+  "version": "0.1.0",
+  "publisher": "GBHL",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tapava/compute-kit"
+  },
+  "homepage": "https://tapava.github.io/compute-kit",
+  "bugs": {
+    "url": "https://github.com/tapava/compute-kit/issues"
+  },
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "keywords": [
+    "mcp",
+    "model context protocol",
+    "language-model-tools",
+    "agent",
+    "copilot",
+    "chat",
+    "ai",
+    "computekit",
+    "web-workers",
+    "wasm"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "computekit-docs",
+        "label": "ComputeKit Docs"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.99.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0",
+    "@vscode/vsce": "^3.0.0"
+  }
+}
