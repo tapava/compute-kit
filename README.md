@@ -12,9 +12,10 @@
 [![Bundle Size React](https://img.shields.io/bundlephobia/minzip/@computekit/react?label=react%20size)](https://bundlephobia.com/package/@computekit/react)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![MCP Server](https://img.shields.io/badge/MCP-Server-blueviolet)](https://gitmcp.io/tapava/compute-kit)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/edit/compute-kit?file=README.md)
 
-[📚 Documentation](https://tapava.github.io/compute-kit) • [Live Demo](https://computekit-demo.vercel.app/) • [Getting Started](#-getting-started) • [Examples](#-examples) • [API](#-api) • [React Hooks](#-react-hooks) • [WASM](#-webassembly-support)
+[📚 Documentation](https://tapava.github.io/compute-kit) • [Live Demo](https://computekit-demo.vercel.app/) • [Getting Started](#-getting-started) • [Examples](#-examples) • [API](#-api) • [React Hooks](#-react-hooks) • [WASM](#-webassembly-support) • [🤖 MCP Server](#-mcp-server)
 
 </div>
 
@@ -584,7 +585,101 @@ computekit/
 
 ---
 
-## 🤝 Contributing
+## � MCP Server
+
+This repository has an [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that lets AI assistants access the ComputeKit documentation and codebase directly. Use it as context in tools like **VS Code Copilot**, **Cursor**, **Windsurf**, **Claude Desktop**, and others.
+
+**MCP Server URL:**
+
+```
+https://gitmcp.io/tapava/compute-kit
+```
+
+### VS Code (GitHub Copilot)
+
+Add the following to your `.vscode/mcp.json` (create the file if it doesn't exist):
+
+```json
+{
+  "servers": {
+    "computekit": {
+      "type": "sse",
+      "url": "https://gitmcp.io/tapava/compute-kit"
+    }
+  }
+}
+```
+
+Alternatively, you can add it to your **User Settings** (`settings.json`):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "computekit": {
+        "type": "sse",
+        "url": "https://gitmcp.io/tapava/compute-kit"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+Go to **Cursor Settings → MCP** and add a new server:
+
+```json
+{
+  "mcpServers": {
+    "computekit": {
+      "url": "https://gitmcp.io/tapava/compute-kit"
+    }
+  }
+}
+```
+
+### Windsurf
+
+Add to your `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "computekit": {
+      "serverUrl": "https://gitmcp.io/tapava/compute-kit"
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "computekit": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic-ai/mcp-proxy@latest",
+        "https://gitmcp.io/tapava/compute-kit"
+      ]
+    }
+  }
+}
+```
+
+> **Config file location:**
+>
+> - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+> - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+---
+
+## �🤝 Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) first.
 
